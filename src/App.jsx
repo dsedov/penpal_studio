@@ -41,7 +41,7 @@ const MenuBar = () => {
     <div className="flex bg-gray-100 border-b border-gray-200">
       <div className="relative">
         <button 
-          className="px-4 py-2 hover:bg-gray-200"
+          className="px-4 py-1 text-sm hover:bg-gray-200"
           onClick={(e) => {
             e.stopPropagation(); // Prevent immediate closing
             setIsFileOpen(!isFileOpen);
@@ -56,7 +56,7 @@ const MenuBar = () => {
             onClick={(e) => e.stopPropagation()} // Prevent menu from closing when clicking inside
           >
             <button 
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
                 console.log('New clicked');
                 setIsFileOpen(false);
@@ -65,7 +65,7 @@ const MenuBar = () => {
               New
             </button>
             <button 
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
                 console.log('Open clicked');
                 setIsFileOpen(false);
@@ -74,7 +74,7 @@ const MenuBar = () => {
               Open
             </button>
             <button 
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
                 console.log('Save clicked');
                 setIsFileOpen(false);
@@ -84,7 +84,7 @@ const MenuBar = () => {
             </button>
             <div className="border-t border-gray-200"></div>
             <button 
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={handleExit}
             >
               Exit
@@ -95,7 +95,7 @@ const MenuBar = () => {
 
       <div className="relative">
         <button 
-          className="px-4 py-2 hover:bg-gray-200"
+          className="px-2 py-1 text-sm hover:bg-gray-200"
           onClick={(e) => {
             e.stopPropagation();
             setIsEditOpen(!isEditOpen);
@@ -110,7 +110,7 @@ const MenuBar = () => {
             onClick={(e) => e.stopPropagation()}
           >
             <button 
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
                 console.log('Undo clicked');
                 setIsEditOpen(false);
@@ -119,7 +119,7 @@ const MenuBar = () => {
               Undo
             </button>
             <button 
-              className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+              className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
                 console.log('Redo clicked');
                 setIsEditOpen(false);
@@ -212,7 +212,7 @@ function Flow() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onContextMenu={onContextMenu}
-        fitView
+        defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
       >
         <Background />
         <Controls />
@@ -228,19 +228,19 @@ function Flow() {
           }}
         >
           <button 
-            className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+            className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
             onClick={() => onCreateNode('Node A')}
           >
             Node A
           </button>
           <button 
-            className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+            className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
             onClick={() => onCreateNode('Node B')}
           >
             Node B
           </button>
           <button 
-            className="block w-full px-4 py-2 text-left hover:bg-gray-100"
+            className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
             onClick={() => onCreateNode('Node C')}
           >
             Node C
