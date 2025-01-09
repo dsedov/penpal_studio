@@ -9,6 +9,9 @@ const P5Canvas = () => {
     zoom: 1
   });
   const p5Ref = useRef(null);
+  const isSpacePressed = useRef(false);
+  const prevMouseRef = useRef({ x: 0, y: 0 });
+  const isPanning = useRef(false);
 
   const setup = (p5, canvasParentRef) => {
     if (!containerRef.current) return;
@@ -102,11 +105,21 @@ const P5Canvas = () => {
     p5.pop();
 
     // Handle panning
-    if (p5.mouseIsPressed && p5.mouseButton === p5.CENTER) {
-      const dx = p5.movedX / viewport.zoom;
-      const dy = p5.movedY / viewport.zoom;
-      viewport.x += dx;
-      viewport.y += dy;
+    if ((p5.mouseIsPressed && p5.mouseButton === p5.CENTER) || 
+        (isSpacePressed.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT)) {
+      
+      if (!isPanning.current) {
+        isPanning.current = true;
+        prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
+      } else {
+        const dx = (p5.mouseX - prevMouseRef.current.x) / viewport.zoom;
+        const dy = (p5.mouseY - prevMouseRef.current.y) / viewport.zoom;
+        viewport.x += dx;
+        viewport.y += dy;
+        prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
+      }
+    } else {
+      isPanning.current = false;
     }
   };
 
@@ -114,20 +127,16 @@ const P5Canvas = () => {
     event.preventDefault();
     const viewport = viewportRef.current;
     
-    // Calculate mouse position relative to canvas center before zoom
     const mx = p5.mouseX - p5.width / 2;
     const my = p5.mouseY - p5.height / 2;
     
-    // Calculate world position before zoom
     const wx = mx / viewport.zoom - viewport.x;
     const wy = my / viewport.zoom - viewport.y;
     
-    // Update zoom
     const oldZoom = viewport.zoom;
     viewport.zoom *= Math.exp(-event.delta * 0.001);
     viewport.zoom = p5.constrain(viewport.zoom, 0.01, 10);
     
-    // Update the offset to keep the mouse position fixed
     const dx = mx / viewport.zoom - mx / oldZoom;
     const dy = my / viewport.zoom - my / oldZoom;
     viewport.x += dx;
@@ -141,6 +150,15 @@ const P5Canvas = () => {
         y: 0,
         zoom: 1
       };
+    } else if (p5.key === ' ') {
+      isSpacePressed.current = true;
+    }
+  };
+
+  const keyReleased = (p5) => {
+    if (p5.key === ' ') {
+      isSpacePressed.current = false;
+      isPanning.current = false;
     }
   };
 
@@ -170,6 +188,7 @@ const P5Canvas = () => {
         draw={draw}
         mouseWheel={mouseWheel}
         keyPressed={keyPressed}
+        keyReleased={keyReleased}
       />
     </div>
   );
