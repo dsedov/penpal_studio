@@ -15,6 +15,51 @@ const Flow = () => {
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  // Check if the connection is valid
+  const onConnect = useCallback((params) => {
+    console.log('Connection attempt:', params);
+    setEdges((eds) => {
+      // Find the target node
+      const targetNode = nodes.find(node => node.id === params.target);
+      const isMergeNode = targetNode?.type === 'merge';
+      
+      // For merge nodes, allow multiple connections
+      if (isMergeNode) {
+        return [...eds, { 
+          ...params, 
+          animated: true,
+          style: { stroke: '#999', strokeWidth: 2 }
+        }];
+      }
+      
+      // For other nodes, replace existing connection to the same input
+      const existingConnection = eds.find(
+        edge => 
+          edge.target === params.target && 
+          edge.targetHandle === params.targetHandle
+      );
+      
+      const filteredEdges = existingConnection 
+        ? eds.filter(edge => edge !== existingConnection)
+        : eds;
+
+      return [...filteredEdges, { 
+        ...params, 
+        animated: true,
+        style: { stroke: '#999', strokeWidth: 2 }
+      }];
+    });
+  }, [setEdges, nodes]);
+
+  // Validate connection while dragging
+  const onConnectStart = useCallback((event, { nodeId, handleId, handleType }) => {
+    console.log('Connection started:', { nodeId, handleId, handleType });
+  }, []);
+
+  const onConnectEnd = useCallback((event) => {
+    console.log('Connection ended');
+  }, []);
   const [contextMenu, setContextMenu] = useState(null);
   const { project } = useReactFlow();
 
@@ -116,6 +161,9 @@ const Flow = () => {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         onContextMenu={onContextMenu}
         nodeTypes={nodeTypes}
         defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
@@ -124,6 +172,9 @@ const Flow = () => {
         panOnScroll={false}
         zoomOnScroll={true}
         preventScrolling={true}
+        snapToGrid={true}
+        snapGrid={[20, 20]}
+        connectionMode="loose"
       >
         <Background />
         <Controls />

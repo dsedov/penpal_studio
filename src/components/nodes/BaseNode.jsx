@@ -1,4 +1,3 @@
-// components/nodes/BaseNode.jsx
 import React from 'react';
 import { Handle, Position } from 'reactflow';
 
@@ -24,12 +23,7 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
           type="target"
           position={Position.Top}
           id={input}
-          className="w-3 h-3"
-          style={{
-            left: inputs.length === 1 
-              ? '50%' 
-              : `${(index + 1) * (100 / (inputs.length + 1))}%`
-          }}
+          className={input.type === 'multi' ? "w-6 h-6" : "w-3 h-3"}
         />
       ))}
       

@@ -8,10 +8,21 @@ export const defaultData = {
 };
 
 const CloneNode = (props) => {
+  const inputs = [
+    {
+      id: 'source',
+      type: 'single'
+    },
+    {
+      id: 'target',
+      type: 'single'
+    }
+  ];
+
   return (
     <BaseNode 
       {...props} 
-      inputs={['source', 'target']}
+      inputs={inputs}
     >
       <div className="space-y-2">
         <div>Source Points: {props.data.sourcePoints?.length || 0}</div>

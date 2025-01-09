@@ -2,15 +2,14 @@ import React from 'react';
 import BaseNode from './BaseNode';
 
 export const defaultData = {
-  label: 'Point Grid',
-  spacing: 20,
-  points: []
+  label: 'Merge',
+  inputs: []
 };
 
-const PointGridNode = (props) => {
+const MergeNode = (props) => {
   const inputs = [{
-    id: 'default',
-    type: 'single'
+    id: 'merge',
+    type: 'multi'  // This specifies it's a multi-input handle
   }];
 
   return (
@@ -19,11 +18,10 @@ const PointGridNode = (props) => {
       inputs={inputs}
     >
       <div className="space-y-2">
-        <div>Spacing: {props.data.spacing}</div>
-        <div>Points: {props.data.points?.length || 0}</div>
+        <div>Input Count: {props.data.inputs?.length || 0}</div>
       </div>
     </BaseNode>
   );
 };
 
-export default PointGridNode;
+export default MergeNode;
