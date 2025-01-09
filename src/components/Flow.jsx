@@ -1,59 +1,58 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import ReactFlow, { 
+import ReactFlow, {
   Background,
-  Controls, 
+  Controls,
   MiniMap,
   useNodesState,
   useEdgesState,
   useReactFlow,
 } from 'reactflow';
+import { nodeTypes, defaultNodeData } from './nodes/nodeTypes';
 import ContextMenu from './ContextMenu';
-
-import './flow.css';
+import 'reactflow/dist/style.css';
 
 const Flow = () => {
   const reactFlowWrapper = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([
-    {
-      id: '1',
-      position: { x: 100, y: 100 },
-      data: { label: 'Node 1' },
-      type: 'default'
-    },
-    {
-      id: '2',
-      position: { x: 300, y: 100 },
-      data: { label: 'Node 2' },
-      type: 'default'
-    }
-  ]);
-
-  const [edges, setEdges, onEdgesChange] = useEdgesState([
-    {
-      id: 'e1-2',
-      source: '1',
-      target: '2',
-      animated: true
-    }
-  ]);
-
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [contextMenu, setContextMenu] = useState(null);
   const { project } = useReactFlow();
 
+  const handleToggleBypass = useCallback((nodeId) => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          bypass: node.id === nodeId ? !node.data.bypass : node.data.bypass,
+        },
+      }))
+    );
+  }, [setNodes]);
+
+  const handleToggleOutput = useCallback((nodeId) => {
+    setNodes((nds) =>
+      nds.map((node) => ({
+        ...node,
+        data: {
+          ...node.data,
+          isOutput: node.id === nodeId ? !node.data.isOutput : false,
+        },
+      }))
+    );
+  }, [setNodes]);
+
   const onContextMenu = useCallback((event) => {
     event.preventDefault();
-    
     const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
     const mousePosition = {
       x: event.clientX - reactFlowBounds.left,
       y: event.clientY - reactFlowBounds.top,
     };
-    
     const flowPosition = project({
       x: mousePosition.x,
       y: mousePosition.y,
     });
-
     setContextMenu({
       mouseX: event.clientX,
       mouseY: event.clientY,
@@ -66,13 +65,18 @@ const Flow = () => {
     const newNode = {
       id: `${nodes.length + 1}`,
       position: contextMenu.flowPosition,
-      data: { label: nodeType },
-      type: 'default'
+      type: nodeType,
+      data: {
+        ...defaultNodeData[nodeType],
+        bypass: false,
+        isOutput: false,
+        onToggleBypass: handleToggleBypass,
+        onToggleOutput: handleToggleOutput,
+      },
     };
-    
     setNodes([...nodes, newNode]);
     setContextMenu(null);
-  }, [nodes, contextMenu, setNodes]);
+  }, [nodes, contextMenu, setNodes, handleToggleBypass, handleToggleOutput]);
 
   useEffect(() => {
     const handleClick = () => setContextMenu(null);
@@ -81,13 +85,18 @@ const Flow = () => {
   }, []);
 
   return (
-    <div className="reactflow-wrapper" ref={reactFlowWrapper}>
+    <div 
+      className="reactflow-wrapper bg-gray-100" 
+      ref={reactFlowWrapper} 
+      style={{ width: '100vw', height: '100vh' }}
+    >
       <ReactFlow
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onContextMenu={onContextMenu}
+        nodeTypes={nodeTypes}
         defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
         className="reactflow-container"
       >
@@ -95,8 +104,7 @@ const Flow = () => {
         <Controls />
         <MiniMap />
       </ReactFlow>
-      
-      <ContextMenu 
+      <ContextMenu
         position={contextMenu}
         onCreateNode={onCreateNode}
         onClose={() => setContextMenu(null)}

@@ -19,7 +19,6 @@ const NodeProperties = () => {
 
 function App() {
   const [selectedNode, setSelectedNode] = useState(null);
-
   return (
     <div className="h-screen w-screen flex flex-col">
       <MenuBar />
