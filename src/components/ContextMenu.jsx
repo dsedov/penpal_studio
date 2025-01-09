@@ -1,20 +1,22 @@
 import React from 'react';
+import { defaultNodeData } from './nodes/nodeTypes';
 
-const ContextMenu = ({ position, onCreateNode, onClose }) => {
+const ContextMenu = ({ position, onCreateNode }) => {
+  console.log('ContextMenu props:', { position, onCreateNode });
   if (!position?.show) return null;
 
-  const menuItems = [
-    { type: 'canvas', label: 'Canvas' },
-    { type: 'pointGrid', label: 'Point Grid' },
-    { type: 'clone', label: 'Clone' },
-  ];
+  const menuItems = Object.keys(defaultNodeData).map(type => ({
+    type,
+    label: defaultNodeData[type].label
+  }));
 
   return (
     <div
-      className="absolute bg-white rounded-lg shadow-lg py-2 z-50"
+      className="fixed bg-white rounded-lg shadow-lg py-2"
       style={{
         left: position.mouseX,
         top: position.mouseY,
+        zIndex: 1000
       }}
     >
       {menuItems.map(({ type, label }) => (

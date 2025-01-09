@@ -31,18 +31,34 @@ const Flow = () => {
   }, [setNodes]);
 
   const handleToggleOutput = useCallback((nodeId) => {
-    setNodes((nds) =>
-      nds.map((node) => ({
+    setNodes((nds) => {
+      // Find the node we're toggling
+      const targetNode = nds.find(node => node.id === nodeId);
+      
+      // If this node is already the output node, we're just turning it off
+      if (targetNode?.data.isOutput) {
+        return nds.map(node => ({
+          ...node,
+          data: {
+            ...node.data,
+            isOutput: false
+          }
+        }));
+      }
+      
+      // Otherwise, turn off all other nodes and turn this one on
+      return nds.map(node => ({
         ...node,
         data: {
           ...node.data,
-          isOutput: node.id === nodeId ? !node.data.isOutput : false,
-        },
-      }))
-    );
+          isOutput: node.id === nodeId
+        }
+      }));
+    });
   }, [setNodes]);
 
   const onContextMenu = useCallback((event) => {
+    console.log('Context menu triggered');
     event.preventDefault();
     const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
     const mousePosition = {
@@ -62,6 +78,7 @@ const Flow = () => {
   }, [project]);
 
   const onCreateNode = useCallback((nodeType) => {
+    console.log('Creating node:', nodeType, defaultNodeData[nodeType]);
     const newNode = {
       id: `${nodes.length + 1}`,
       position: contextMenu.flowPosition,
@@ -88,7 +105,11 @@ const Flow = () => {
     <div 
       className="reactflow-wrapper bg-gray-100" 
       ref={reactFlowWrapper} 
-      style={{ width: '100vw', height: '100vh' }}
+      style={{ 
+        width: '100vw', 
+        height: '100vh',
+        position: 'relative'
+      }}
     >
       <ReactFlow
         nodes={nodes}
@@ -99,6 +120,10 @@ const Flow = () => {
         nodeTypes={nodeTypes}
         defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
         className="reactflow-container"
+        panOnDrag={[0]}
+        panOnScroll={false}
+        zoomOnScroll={true}
+        preventScrolling={true}
       >
         <Background />
         <Controls />

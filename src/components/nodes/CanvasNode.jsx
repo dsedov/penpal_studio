@@ -10,7 +10,7 @@ export const defaultData = {
 
 const CanvasNode = (props) => {
   return (
-    <BaseNode {...props}>
+    <BaseNode {...props} showInputs={false}>
       <div className="space-y-2">
         <div>Canvas Size: {props.data.width} x {props.data.height}</div>
         <div>Margins: {props.data.margins.join(', ')}</div>
