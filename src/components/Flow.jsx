@@ -9,7 +9,9 @@ import ReactFlow, {
 } from 'reactflow';
 import ContextMenu from './ContextMenu';
 
-function Flow() {
+import './flow.css';
+
+const Flow = () => {
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([
     {
@@ -79,7 +81,7 @@ function Flow() {
   }, []);
 
   return (
-    <div ref={reactFlowWrapper} className="flex-1 bg-gray-100 relative">
+    <div className="reactflow-wrapper" ref={reactFlowWrapper}>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -87,6 +89,7 @@ function Flow() {
         onEdgesChange={onEdgesChange}
         onContextMenu={onContextMenu}
         defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
+        className="reactflow-container"
       >
         <Background />
         <Controls />
@@ -100,6 +103,6 @@ function Flow() {
       />
     </div>
   );
-}
+};
 
 export default Flow;
