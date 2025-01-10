@@ -23,6 +23,25 @@ const Flow = ({
   onComputeResults,
 }) => {
   const reactFlowWrapper = useRef(null);
+  const [contextMenu, setContextMenu] = useState(null);
+  const { project } = useReactFlow();
+
+  // Define computeGraphOnce first
+  const computeGraphOnce = useCallback(async () => {
+    const result = await computeGraph(nodes, edges);
+    onComputeResults(result);
+  }, [nodes, edges, onComputeResults]);
+
+  // Add computation effect with proper dependencies
+  useEffect(() => {
+    computeGraphOnce();
+  }, [computeGraphOnce]);
+
+  const handleEdgesChange = useCallback((changes) => {
+    onEdgesChange(changes);
+    // Force recomputation on next tick for edge deletions/changes
+    setTimeout(() => computeGraphOnce(), 0);
+  }, [onEdgesChange, computeGraphOnce]);
 
   const onNodeClick = useCallback((event, clickedNode) => {
     event.preventDefault();
@@ -177,7 +196,9 @@ const Flow = ({
         style: { stroke: '#999', strokeWidth: 2 }
       }];
     });
-  }, [setEdges, nodes]);
+    // Force recomputation on next tick
+    setTimeout(() => computeGraphOnce(), 0);
+  }, [setEdges, nodes, computeGraphOnce]);
 
   // Validate connection while dragging
   const onConnectStart = useCallback((event, { nodeId, handleId, handleType }) => {
@@ -187,8 +208,6 @@ const Flow = ({
   const onConnectEnd = useCallback((event) => {
     console.log('Connection ended');
   }, []);
-  const [contextMenu, setContextMenu] = useState(null);
-  const { project } = useReactFlow();
 
   const handleToggleBypass = useCallback((nodeId) => {
     setNodes((nds) =>
@@ -227,7 +246,9 @@ const Flow = ({
         }
       }));
     });
-  }, [setNodes]);
+    // Force recomputation on next tick to ensure state is updated
+    setTimeout(() => computeGraphOnce(), 0);
+  }, [setNodes, computeGraphOnce]);
 
   const onContextMenu = useCallback((event) => {
     console.log('Context menu triggered');
@@ -274,17 +295,6 @@ const Flow = ({
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  // Memoize the computation function
-  const computeGraphOnce = useCallback(async () => {
-    const result = await computeGraph(nodes, edges);
-    onComputeResults(result);
-  }, [nodes, edges, onComputeResults]);
-
-  // Add computation effect with proper dependencies
-  useEffect(() => {
-    computeGraphOnce();
-  }, [computeGraphOnce]);
-
   return (
     <div 
       className="reactflow-wrapper bg-gray-100" 
@@ -298,8 +308,7 @@ const Flow = ({
       <ReactFlow
         nodes={nodes}
         edges={edges}
-
-        onEdgesChange={onEdgesChange}
+        onEdgesChange={handleEdgesChange}
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}

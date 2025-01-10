@@ -60,14 +60,17 @@ export const computeNodeOutput = async (node, inputData, nodes, edges) => {
 // Cache for computation results
 let computationCache = new Map();
 let lastComputeTime = 0;
-const COMPUTE_THROTTLE = 100; // ms
+const COMPUTE_THROTTLE = 50; // Reduce throttle time for better responsiveness
 
 // Main function to compute the entire graph
 export const computeGraph = async (nodes, edges) => {
   // Throttle computations
   const now = Date.now();
   if (now - lastComputeTime < COMPUTE_THROTTLE) {
-    return computationCache;
+    // Only use cache if nodes and edges haven't changed
+    if (computationCache.size > 0) {
+      return computationCache;
+    }
   }
   lastComputeTime = now;
 
