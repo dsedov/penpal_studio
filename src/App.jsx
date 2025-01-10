@@ -63,7 +63,7 @@ function App() {
       <div className="flex-1" style={{ height: 'calc(100vh - 48px)' }}>
         <Allotment>
           <Allotment.Pane minSize={200}>
-            <P5Canvas />
+            <P5Canvas computedData={selectedNode?.data.isOutput ? computationResults?.get(selectedNodeId) : null} />
           </Allotment.Pane>
           <Allotment.Pane minSize={200}>
             <Allotment vertical>
@@ -71,7 +71,7 @@ function App() {
                 <AttributeEditor
                   selectedNode={selectedNode}
                   onPropertyChange={handlePropertyChange}
-                  computedData={getComputedData(selectedNode?.id)}
+                  computedData={selectedNodeId ? computationResults?.get(selectedNodeId) : null}
                 />
               </Allotment.Pane>
               <Allotment.Pane minSize={100}>

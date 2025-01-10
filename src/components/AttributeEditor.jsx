@@ -133,7 +133,7 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
                   />
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Points ({computedData.points.length})</h3>
+                  <h3 className="font-medium mb-2">Points ({computedData.points?.length || 0})</h3>
                   <CodeInput
                     value={JSON.stringify(computedData.points, null, 2)}
                     onChange={() => {}}
@@ -142,7 +142,7 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
                   />
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Lines ({computedData.lines.length})</h3>
+                  <h3 className="font-medium mb-2">Lines ({computedData.lines?.length || 0})</h3>
                   <CodeInput
                     value={JSON.stringify(computedData.lines, null, 2)}
                     onChange={() => {}}
