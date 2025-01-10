@@ -7,32 +7,43 @@ import MenuBar from './components/MenuBar';
 import Flow from './components/Flow';
 import P5Canvas from './components/P5Canvas';
 import AttributeEditor from './components/AttributeEditor';
+import { useNodesState, useEdgesState } from 'reactflow';
 
 function App() {
-  const [selectedNode, setSelectedNode] = useState(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedNodeId, setSelectedNodeId] = useState(null);
 
   const handleNodeSelect = (node) => {
-    setSelectedNode(node);
+    setSelectedNodeId(node ? node.id : null);
   };
 
   const handlePropertyChange = (nodeId, propertyName, value) => {
-    // Update the selected node if it's the one being edited
-    if (selectedNode && selectedNode.id === nodeId) {
-      setSelectedNode(prev => ({
-        ...prev,
-        data: {
-          ...prev.data,
-          properties: {
-            ...prev.data.properties,
-            [propertyName]: {
-              ...prev.data.properties[propertyName],
-              value: value
-            }
-          }
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              properties: {
+                ...node.data.properties,
+                [propertyName]: {
+                  ...node.data.properties[propertyName],
+                  value,
+                },
+              },
+            },
+          };
         }
-      }));
-    }
+        return node;
+      })
+    );
   };
+
+  const selectedNode = selectedNodeId
+    ? nodes.find((node) => node.id === selectedNodeId)
+    : null;
 
   return (
     <div className="h-screen w-screen flex flex-col dark">
@@ -45,15 +56,23 @@ function App() {
           <Allotment.Pane minSize={200}>
             <Allotment vertical>
               <Allotment.Pane minSize={100}>
-                <AttributeEditor 
-                  selectedNode={selectedNode} 
+                <AttributeEditor
+                  selectedNode={selectedNode}
                   onPropertyChange={handlePropertyChange}
                 />
               </Allotment.Pane>
               <Allotment.Pane minSize={100}>
                 <div style={{ width: '100%', height: '100%' }}>
                   <ReactFlowProvider>
-                    <Flow onNodeSelect={handleNodeSelect} />
+                    <Flow
+                      onNodeSelect={handleNodeSelect}
+                      nodes={nodes}
+                      edges={edges}
+                      onNodesChange={onNodesChange}
+                      onEdgesChange={onEdgesChange}
+                      setNodes={setNodes}
+                      setEdges={setEdges}
+                    />
                   </ReactFlowProvider>
                 </div>
               </Allotment.Pane>

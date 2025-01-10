@@ -11,10 +11,16 @@ import { nodeTypes, defaultNodeData } from './nodes/nodeTypes';
 import ContextMenu from './ContextMenu';
 import 'reactflow/dist/style.css';
 
-const Flow = ({ onNodeSelect }) => {  // Remove nodes and setNodes from props
+const Flow = ({
+  onNodeSelect,
+  nodes,
+  edges,
+  onNodesChange,
+  onEdgesChange,
+  setNodes,
+  setEdges,
+}) => {
   const reactFlowWrapper = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
   const onNodeClick = useCallback((event, clickedNode) => {
     event.preventDefault();
