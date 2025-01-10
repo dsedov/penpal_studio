@@ -47,7 +47,6 @@ const MenuBar = () => {
             <button 
               className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
-                console.log('New clicked');
                 setIsFileOpen(false);
               }}
             >
@@ -56,7 +55,6 @@ const MenuBar = () => {
             <button 
               className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
-                console.log('Open clicked');
                 setIsFileOpen(false);
               }}
             >
@@ -65,7 +63,6 @@ const MenuBar = () => {
             <button 
               className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
-                console.log('Save clicked');
                 setIsFileOpen(false);
               }}
             >
@@ -101,7 +98,6 @@ const MenuBar = () => {
             <button 
               className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
-                console.log('Undo clicked');
                 setIsEditOpen(false);
               }}
             >
@@ -110,7 +106,6 @@ const MenuBar = () => {
             <button 
               className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
-                console.log('Redo clicked');
                 setIsEditOpen(false);
               }}
             >

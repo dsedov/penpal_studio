@@ -2,7 +2,7 @@ import React from 'react';
 import { defaultNodeData } from './nodes/nodeTypes';
 
 const ContextMenu = ({ position, onCreateNode }) => {
-  console.log('ContextMenu props:', { position, onCreateNode });
+
   if (!position?.show) return null;
 
   const menuItems = Object.keys(defaultNodeData).map(type => ({

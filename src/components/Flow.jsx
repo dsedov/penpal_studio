@@ -302,17 +302,12 @@ const Flow = ({
   const handleNodesDelete = useCallback((nodesToDelete) => {
     // Get IDs of nodes being deleted
     const deletedNodeIds = nodesToDelete.map(node => node.id);
-    console.log('Deleting nodes:', deletedNodeIds);
-    console.log('Current edges before deletion:', edges);
-    
+
     // First, update edges in a single operation
     const newEdges = edges.filter(edge => {
       const sourceDeleted = deletedNodeIds.includes(edge.source);
       const targetDeleted = deletedNodeIds.includes(edge.target);
       const shouldKeep = !sourceDeleted && !targetDeleted;
-      if (!shouldKeep) {
-        console.log('Removing edge:', edge);
-      }
       return shouldKeep;
     });
     

@@ -35,7 +35,6 @@ const P5Canvas = ({ computedData }) => {
 
   const drawCanvas = (p5, viewport, topLeft, bottomRight) => {
     if (!computedData) return;
-    console.log('Drawing canvas with data:', computedData);
 
     // Set background color if provided
     if (computedData.backgroundColor) {

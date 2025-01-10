@@ -15,7 +15,6 @@ export const defaultData = {
   },
   compute: async (inputData, properties) => {
     const inputCanvas = inputData.default;
-    console.log('PointGrid input:', inputData.default);
     if (!inputCanvas) return null;
 
     // Clone the input canvas to avoid modifying the original
