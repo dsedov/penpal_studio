@@ -28,7 +28,9 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
           ? 'border-blue-500' 
           : 'border-green-500'
         : 'border-gray-300'
-    }`}>
+    }`}
+      style={{ opacity: data.bypass ? 0.5 : 1 }}
+    >
       {/* Input Handles */}
       {showInputs && inputs.map((input, index) => (
         <Handle

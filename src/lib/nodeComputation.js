@@ -33,7 +33,12 @@ export const getComputationOrder = (outputNode, nodes, edges) => {
 export const computeNodeOutput = async (node, inputData, nodes, edges) => {
   if (node.data.bypass) {
     // If node is bypassed, pass through the first input
-    const firstInput = Object.values(inputData)[0];
+    // Get the first connected input
+    const nodeInputs = getInputNodes(node, nodes, edges);
+    if (nodeInputs.length === 0) return null;
+    
+    const firstInputId = nodeInputs[0].inputId;
+    const firstInput = inputData[firstInputId];
     return firstInput || null;
   }
 
