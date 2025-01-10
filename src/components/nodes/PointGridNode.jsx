@@ -28,8 +28,6 @@ export const defaultData = {
         canvas.point(x, y);
       }
     }
-
-    console.log('PointGrid output:', canvas);
     return canvas;
   }
 };

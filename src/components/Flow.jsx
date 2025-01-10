@@ -14,6 +14,7 @@ import { computeGraph } from '../lib/nodeComputation';
 
 const Flow = ({
   onNodeSelect,
+  onOutputToggle,
   nodes,
   edges,
   onNodesChange,
@@ -164,7 +165,6 @@ const Flow = ({
   }, [setNodes]);
   // Check if the connection is valid
   const onConnect = useCallback((params) => {
-    console.log('Connection attempt:', params);
     setEdges((eds) => {
       // Find the target node
       const targetNode = nodes.find(node => node.id === params.target);
@@ -196,17 +196,14 @@ const Flow = ({
         style: { stroke: '#999', strokeWidth: 2 }
       }];
     });
-    // Force recomputation on next tick
     setTimeout(() => computeGraphOnce(), 0);
   }, [setEdges, nodes, computeGraphOnce]);
 
   // Validate connection while dragging
   const onConnectStart = useCallback((event, { nodeId, handleId, handleType }) => {
-    console.log('Connection started:', { nodeId, handleId, handleType });
   }, []);
 
   const onConnectEnd = useCallback((event) => {
-    console.log('Connection ended');
   }, []);
 
   const handleToggleBypass = useCallback((nodeId) => {
@@ -222,36 +219,29 @@ const Flow = ({
   }, [setNodes]);
 
   const handleToggleOutput = useCallback((nodeId) => {
-    setNodes((nds) => {
-      // Find the node we're toggling
-      const targetNode = nds.find(node => node.id === nodeId);
-      
-      // If this node is already the output node, we're just turning it off
-      if (targetNode?.data.isOutput) {
-        return nds.map(node => ({
-          ...node,
-          data: {
-            ...node.data,
-            isOutput: false
-          }
-        }));
-      }
-      
-      // Otherwise, turn off all other nodes and turn this one on
-      return nds.map(node => ({
+    // First call the parent's output toggle handler
+    onOutputToggle(nodeId);
+    
+    // Then update the nodes directly here
+    setNodes(nds => {
+      const updatedNodes = nds.map(node => ({
         ...node,
         data: {
           ...node.data,
           isOutput: node.id === nodeId
         }
       }));
+      
+      // Schedule computation after both state updates
+      Promise.resolve().then(() => {
+        computeGraphOnce();
+      });
+      
+      return updatedNodes;
     });
-    // Force recomputation on next tick to ensure state is updated
-    setTimeout(() => computeGraphOnce(), 0);
-  }, [setNodes, computeGraphOnce]);
+  }, [onOutputToggle, setNodes, computeGraphOnce]);
 
   const onContextMenu = useCallback((event) => {
-    console.log('Context menu triggered');
     event.preventDefault();
     const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
     const mousePosition = {
@@ -270,30 +260,77 @@ const Flow = ({
     });
   }, [project]);
 
+  const generateUniqueId = (nodes) => {
+    // Find the highest existing ID and add 1
+    const maxId = nodes.reduce((max, node) => {
+      const numId = parseInt(node.id);
+      return numId > max ? numId : max;
+    }, 0);
+    return `${maxId + 1}`;
+  };
+
   const onCreateNode = useCallback((nodeType) => {
     const newNode = {
-      id: `${nodes.length + 1}`,
+      id: generateUniqueId(nodes),
       position: contextMenu.flowPosition,
       type: nodeType,
-      selected: false,  // Add this
+      selected: false,
       data: {
         ...defaultNodeData[nodeType],
         bypass: false,
         isOutput: false,
-        isMultiSelected: false,  // Add this
+        isMultiSelected: false,
         onToggleBypass: handleToggleBypass,
         onToggleOutput: handleToggleOutput,
       },
     };
-    setNodes([...nodes, newNode]);
+    // Preserve existing nodes and add new one
+    setNodes(nds => [...nds, newNode]);
     setContextMenu(null);
-  }, [nodes, contextMenu, setNodes, handleToggleBypass, handleToggleOutput]);
+    
+    // Schedule computation after node creation
+    setTimeout(() => computeGraphOnce(), 0);
+  }, [nodes, contextMenu, setNodes, handleToggleBypass, handleToggleOutput, computeGraphOnce]);
 
   useEffect(() => {
     const handleClick = () => setContextMenu(null);
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, []);
+
+  // Handle node deletion and its edges
+  const handleNodesDelete = useCallback((nodesToDelete) => {
+    // Get IDs of nodes being deleted
+    const deletedNodeIds = nodesToDelete.map(node => node.id);
+    console.log('Deleting nodes:', deletedNodeIds);
+    console.log('Current edges before deletion:', edges);
+    
+    // First, update edges in a single operation
+    const newEdges = edges.filter(edge => {
+      const sourceDeleted = deletedNodeIds.includes(edge.source);
+      const targetDeleted = deletedNodeIds.includes(edge.target);
+      const shouldKeep = !sourceDeleted && !targetDeleted;
+      if (!shouldKeep) {
+        console.log('Removing edge:', edge);
+      }
+      return shouldKeep;
+    });
+    
+    // Then, update nodes in a single operation
+    const newNodes = nodes.filter(node => !deletedNodeIds.includes(node.id));
+    
+    // Update both states
+    setEdges(newEdges);
+    setNodes(newNodes);
+    
+    // Clear selection if deleted node was selected
+    if (deletedNodeIds.some(id => nodes.find(n => n.id === id)?.selected)) {
+      onNodeSelect(null);
+    }
+
+    // Trigger recomputation after deletion
+    setTimeout(() => computeGraphOnce(), 0);
+  }, [setEdges, setNodes, nodes, edges, onNodeSelect, computeGraphOnce]);
 
   return (
     <div 
@@ -309,6 +346,7 @@ const Flow = ({
         nodes={nodes}
         edges={edges}
         onEdgesChange={handleEdgesChange}
+        onNodesDelete={handleNodesDelete}
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
@@ -329,11 +367,19 @@ const Flow = ({
         multiSelectionKeyCode="Shift"
         selectionKeyCode="Shift"
         onNodesChange={(changes) => {
-          // Filter out selection changes that come from clicking
-          const filteredChanges = changes.filter(change => 
-            change.type !== 'select' || !change.selected
-          );
-          onNodesChange(filteredChanges);
+          const nonRemoveChanges = changes.filter(change => change.type !== 'remove');
+          if (nonRemoveChanges.length > 0) {
+            onNodesChange(nonRemoveChanges);
+          }
+        }}
+        deleteKeyCode="Delete"
+        onInit={() => {
+          // Prevent default delete behavior
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete') {
+              e.preventDefault();
+            }
+          });
         }}
       >
         <Background />

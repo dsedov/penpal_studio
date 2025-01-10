@@ -8,14 +8,16 @@ import Flow from './components/Flow';
 import P5Canvas from './components/P5Canvas';
 import AttributeEditor from './components/AttributeEditor';
 import { useNodesState, useEdgesState } from 'reactflow';
+import { computeGraph } from './lib/nodeComputation';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [outputNodeId, setOutputNodeId] = useState(null);
   const [computationResults, setComputationResults] = useState(null);
 
-  // Memoize the computation results handler
+  // Handle computation results
   const handleComputeResults = useCallback((results) => {
     setComputationResults(results);
   }, []);
@@ -24,9 +26,13 @@ function App() {
     setSelectedNodeId(node ? node.id : null);
   };
 
+  const handleOutputToggle = useCallback((nodeId) => {
+    setOutputNodeId(nodeId);
+  }, []);
+
   const handlePropertyChange = (nodeId, propertyName, value) => {
-    setNodes((nds) =>
-      nds.map((node) => {
+    setNodes(nds =>
+      nds.map(node => {
         if (node.id === nodeId) {
           return {
             ...node,
@@ -51,19 +57,15 @@ function App() {
     ? nodes.find((node) => node.id === selectedNodeId)
     : null;
 
-  // Safe access to computation results
-  const getComputedData = (nodeId) => {
-    if (!computationResults || !nodeId) return null;
-    return computationResults.get(nodeId);
-  };
-
   return (
     <div className="h-screen w-screen flex flex-col dark">
       <MenuBar />
       <div className="flex-1" style={{ height: 'calc(100vh - 48px)' }}>
         <Allotment>
           <Allotment.Pane minSize={200}>
-            <P5Canvas computedData={selectedNode?.data.isOutput ? computationResults?.get(selectedNodeId) : null} />
+            <P5Canvas 
+              computedData={outputNodeId ? computationResults?.get(outputNodeId) : null} 
+            />
           </Allotment.Pane>
           <Allotment.Pane minSize={200}>
             <Allotment vertical>
@@ -79,6 +81,7 @@ function App() {
                   <ReactFlowProvider>
                     <Flow
                       onNodeSelect={handleNodeSelect}
+                      onOutputToggle={handleOutputToggle}
                       nodes={nodes}
                       edges={edges}
                       onNodesChange={onNodesChange}

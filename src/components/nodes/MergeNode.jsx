@@ -1,5 +1,6 @@
 import React from 'react';
 import BaseNode from './BaseNode';
+import Canvas from '../data/Canvas';
 
 export const defaultData = {
   label: 'Merge',
