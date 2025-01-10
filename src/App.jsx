@@ -6,42 +6,54 @@ import "allotment/dist/style.css";
 import MenuBar from './components/MenuBar';
 import Flow from './components/Flow';
 import P5Canvas from './components/P5Canvas';
-
-const NodeProperties = () => {
-  return (
-    <div className="w-full h-full bg-green-100 p-4">
-      <div className="bg-green-200 w-full h-full rounded">
-        Node Properties Area
-      </div>
-    </div>
-  );
-};
+import AttributeEditor from './components/AttributeEditor';
 
 function App() {
   const [selectedNode, setSelectedNode] = useState(null);
+
+  const handleNodeSelect = (node) => {
+    setSelectedNode(node);
+  };
+
+  const handlePropertyChange = (nodeId, propertyName, value) => {
+    // Update the selected node if it's the one being edited
+    if (selectedNode && selectedNode.id === nodeId) {
+      setSelectedNode(prev => ({
+        ...prev,
+        data: {
+          ...prev.data,
+          properties: {
+            ...prev.data.properties,
+            [propertyName]: {
+              ...prev.data.properties[propertyName],
+              value: value
+            }
+          }
+        }
+      }));
+    }
+  };
+
   return (
-    <div className="h-screen w-screen flex flex-col">
+    <div className="h-screen w-screen flex flex-col dark">
       <MenuBar />
       <div className="flex-1" style={{ height: 'calc(100vh - 48px)' }}>
         <Allotment>
-          {/* Left panel - P5.js Canvas */}
           <Allotment.Pane minSize={200}>
             <P5Canvas />
           </Allotment.Pane>
-
-          {/* Right panel - split vertically */}
           <Allotment.Pane minSize={200}>
             <Allotment vertical>
-              {/* Top right - Node Properties */}
               <Allotment.Pane minSize={100}>
-                <NodeProperties selectedNode={selectedNode} />
+                <AttributeEditor 
+                  selectedNode={selectedNode} 
+                  onPropertyChange={handlePropertyChange}
+                />
               </Allotment.Pane>
-
-              {/* Bottom right - ReactFlow */}
               <Allotment.Pane minSize={100}>
                 <div style={{ width: '100%', height: '100%' }}>
                   <ReactFlowProvider>
-                    <Flow />
+                    <Flow onNodeSelect={handleNodeSelect} />
                   </ReactFlowProvider>
                 </div>
               </Allotment.Pane>

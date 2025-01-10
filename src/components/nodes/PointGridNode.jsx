@@ -3,8 +3,14 @@ import BaseNode from './BaseNode';
 
 export const defaultData = {
   label: 'Point Grid',
-  spacing: 20,
-  points: []
+  properties: {
+    spacing: {
+      type: 'float',
+      value: 20.0,
+      min: 0.1,
+      max: 100.0,
+    }
+  }
 };
 
 const PointGridNode = (props) => {
@@ -18,10 +24,6 @@ const PointGridNode = (props) => {
       {...props} 
       inputs={inputs}
     >
-      <div className="space-y-2">
-        <div>Spacing: {props.data.spacing}</div>
-        <div>Points: {props.data.points?.length || 0}</div>
-      </div>
     </BaseNode>
   );
 };

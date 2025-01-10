@@ -11,11 +11,129 @@ import { nodeTypes, defaultNodeData } from './nodes/nodeTypes';
 import ContextMenu from './ContextMenu';
 import 'reactflow/dist/style.css';
 
-const Flow = () => {
+const Flow = ({ onNodeSelect }) => {  // Remove nodes and setNodes from props
   const reactFlowWrapper = useRef(null);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+  const onNodeClick = useCallback((event, clickedNode) => {
+    event.preventDefault();
+    
+    if (!event.shiftKey) {
+      // Single selection mode
+      setNodes((nds) => 
+        nds.map((node) => ({
+          ...node,
+          selected: node.id === clickedNode.id,
+          data: {
+            ...node.data,
+            isMultiSelected: false
+          }
+        }))
+      );
+      // Find the updated node to pass to onNodeSelect
+      const updatedNode = nodes.find(node => node.id === clickedNode.id);
+      onNodeSelect(updatedNode);
+    } else {
+      // Shift-click mode
+      setNodes((nds) => {
+        // Get current selection state
+        const currentSelected = nds.filter(n => n.selected);
+        
+        let updatedNodes;
+        // If clicked node is already selected, remove it
+        if (clickedNode.selected) {
+          updatedNodes = nds.map(node => ({
+            ...node,
+            selected: node.id !== clickedNode.id && node.selected,
+            data: {
+              ...node.data,
+              isMultiSelected: node.id !== clickedNode.id && node.selected && currentSelected.length > 2
+            }
+          }));
+        } else {
+          // If clicked node is not selected, add it to selection
+          updatedNodes = nds.map(node => ({
+            ...node,
+            selected: node.id === clickedNode.id ? true : node.selected,
+            data: {
+              ...node.data,
+              isMultiSelected: (node.id === clickedNode.id || node.selected) && (currentSelected.length > 0)
+            }
+          }));
+        }
+  
+        // Update the selected node in parent if this is the only selected node
+        const selectedNodes = updatedNodes.filter(n => n.selected);
+        if (selectedNodes.length === 1) {
+          onNodeSelect(selectedNodes[0]);
+        } else if (selectedNodes.length === 0) {
+          onNodeSelect(null);
+        }
+  
+        return updatedNodes;
+      });
+    }
+  }, [setNodes, nodes, onNodeSelect]);
+  
+  const onSelectionChange = useCallback(({ nodes: selectedNodes }) => {
+    setNodes((nds) => {
+      const selectedIds = selectedNodes.map(node => node.id);
+      const hasShift = window.event?.shiftKey;
+  
+      if (hasShift) {
+        // Get existing selected nodes
+        const existingSelectedIds = nds
+          .filter(node => node.selected)
+          .map(node => node.id);
+  
+        // Combine existing and new selections
+        const allSelectedIds = [...new Set([...existingSelectedIds, ...selectedIds])];
+  
+        return nds.map((node) => ({
+          ...node,
+          selected: allSelectedIds.includes(node.id),
+          data: {
+            ...node.data,
+            isMultiSelected: allSelectedIds.includes(node.id) && allSelectedIds.length > 1
+          }
+        }));
+      } else {
+        // Regular selection
+        return nds.map((node) => ({
+          ...node,
+          selected: selectedIds.includes(node.id),
+          data: {
+            ...node.data,
+            isMultiSelected: selectedIds.includes(node.id) && selectedIds.length > 1
+          }
+        }));
+      }
+    });
+  }, [setNodes]);
+  
+  const handlePropertyChange = useCallback((nodeId, propertyName, value) => {
+    setNodes((nds) =>
+      nds.map((node) => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              properties: {
+                ...node.data.properties,
+                [propertyName]: {
+                  ...node.data.properties[propertyName],
+                  value
+                }
+              }
+            }
+          };
+        }
+        return node;
+      })
+    );
+  }, [setNodes]);
   // Check if the connection is valid
   const onConnect = useCallback((params) => {
     console.log('Connection attempt:', params);
@@ -123,15 +241,16 @@ const Flow = () => {
   }, [project]);
 
   const onCreateNode = useCallback((nodeType) => {
-    console.log('Creating node:', nodeType, defaultNodeData[nodeType]);
     const newNode = {
       id: `${nodes.length + 1}`,
       position: contextMenu.flowPosition,
       type: nodeType,
+      selected: false,  // Add this
       data: {
         ...defaultNodeData[nodeType],
         bypass: false,
         isOutput: false,
+        isMultiSelected: false,  // Add this
         onToggleBypass: handleToggleBypass,
         onToggleOutput: handleToggleOutput,
       },
@@ -159,22 +278,35 @@ const Flow = () => {
       <ReactFlow
         nodes={nodes}
         edges={edges}
-        onNodesChange={onNodesChange}
+
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
         onContextMenu={onContextMenu}
+        onNodeClick={onNodeClick}
+        onSelectionChange={onSelectionChange}
         nodeTypes={nodeTypes}
         defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
         className="reactflow-container"
         panOnDrag={[0]}
         panOnScroll={false}
         zoomOnScroll={true}
-        preventScrolling={true}
+        preventScrolling={true}s
         snapToGrid={true}
         snapGrid={[20, 20]}
         connectionMode="loose"
+        selectNodesOnDrag={true} 
+        multiSelectionKeyCode="Shift"
+        selectionKeyCode="Shift"
+        nodesSelectionActive={true}
+        onNodesChange={(changes) => {
+          // Filter out selection changes that come from clicking
+          const filteredChanges = changes.filter(change => 
+            change.type !== 'select' || !change.selected
+          );
+          onNodesChange(filteredChanges);
+        }}
       >
         <Background />
         <Controls />

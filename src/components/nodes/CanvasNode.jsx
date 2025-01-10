@@ -3,18 +3,25 @@ import BaseNode from './BaseNode';
 
 export const defaultData = {
   label: 'Canvas',
-  width: 800,
-  height: 600,
-  margins: [50, 50, 50, 50]
+  properties: {
+    width: {
+      type: 'int',
+      value: 800,
+      min: 1,
+      max: 10000,
+    },
+    height: {
+      type: 'int',
+      value: 600,
+      min: 1,
+      max: 10000,
+    }
+  }
 };
 
 const CanvasNode = (props) => {
   return (
     <BaseNode {...props} showInputs={false}>
-      <div className="space-y-2">
-        <div>Canvas Size: {props.data.width} x {props.data.height}</div>
-        <div>Margins: {props.data.margins.join(', ')}</div>
-      </div>
     </BaseNode>
   );
 };

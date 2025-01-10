@@ -17,9 +17,6 @@ const MergeNode = (props) => {
       {...props} 
       inputs={inputs}
     >
-      <div className="space-y-2">
-        <div>Input Count: {props.data.inputs?.length || 0}</div>
-      </div>
     </BaseNode>
   );
 };
