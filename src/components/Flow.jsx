@@ -10,6 +10,7 @@ import ReactFlow, {
 import { nodeTypes, defaultNodeData } from './nodes/nodeTypes';
 import ContextMenu from './ContextMenu';
 import 'reactflow/dist/style.css';
+import { computeGraph } from '../lib/nodeComputation';
 
 const Flow = ({
   onNodeSelect,
@@ -19,6 +20,7 @@ const Flow = ({
   onEdgesChange,
   setNodes,
   setEdges,
+  onComputeResults,
 }) => {
   const reactFlowWrapper = useRef(null);
 
@@ -139,6 +141,7 @@ const Flow = ({
         return node;
       })
     );
+    // Computation will be triggered by the useEffect
   }, [setNodes]);
   // Check if the connection is valid
   const onConnect = useCallback((params) => {
@@ -271,6 +274,17 @@ const Flow = ({
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
+  // Memoize the computation function
+  const computeGraphOnce = useCallback(async () => {
+    const result = await computeGraph(nodes, edges);
+    onComputeResults(result);
+  }, [nodes, edges, onComputeResults]);
+
+  // Add computation effect with proper dependencies
+  useEffect(() => {
+    computeGraphOnce();
+  }, [computeGraphOnce]);
+
   return (
     <div 
       className="reactflow-wrapper bg-gray-100" 
@@ -298,14 +312,13 @@ const Flow = ({
         panOnDrag={[0]}
         panOnScroll={false}
         zoomOnScroll={true}
-        preventScrolling={true}s
+        preventScrolling={true}
         snapToGrid={true}
         snapGrid={[20, 20]}
         connectionMode="loose"
         selectNodesOnDrag={true} 
         multiSelectionKeyCode="Shift"
         selectionKeyCode="Shift"
-        nodesSelectionActive={true}
         onNodesChange={(changes) => {
           // Filter out selection changes that come from clicking
           const filteredChanges = changes.filter(change => 

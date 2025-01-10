@@ -6,7 +6,7 @@ import { ColorInput } from './inputs/ColorInput';
 import { StringInput } from './inputs/StringInput';
 import { CodeInput } from './inputs/CodeInput';
 
-const AttributeEditor = ({ selectedNode, onPropertyChange }) => {
+const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
   // Add local tab state
   const [activeTab, setActiveTab] = useState('properties');
 
@@ -82,6 +82,14 @@ const AttributeEditor = ({ selectedNode, onPropertyChange }) => {
           >
             Code
           </button>
+          <button
+            onClick={() => setActiveTab('computed')}
+            className={`px-3 py-1 rounded ${
+              activeTab === 'computed' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+            }`}
+          >
+            Computed
+          </button>
         </div>
 
         {/* Tab content */}
@@ -98,7 +106,7 @@ const AttributeEditor = ({ selectedNode, onPropertyChange }) => {
               ))}
             </div>
           </>
-        ) : (
+        ) : activeTab === 'code' ? (
           /* Code tab: read-only display of the node's data */
           <CodeInput
             value={JSON.stringify(selectedNode.data, null, 2)}
@@ -106,6 +114,23 @@ const AttributeEditor = ({ selectedNode, onPropertyChange }) => {
             language="json"
             readOnly
           />
+        ) : (
+          /* Computed tab: show computation results */
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Computed Data</h2>
+            {computedData ? (
+              <CodeInput
+                value={JSON.stringify(computedData, null, 2)}
+                onChange={() => {}}
+                language="json"
+                readOnly
+              />
+            ) : (
+              <div className="text-gray-500">
+                No computed data available for this node
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

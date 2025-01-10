@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Allotment } from "allotment";
@@ -13,6 +13,12 @@ function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
+  const [computationResults, setComputationResults] = useState(null);
+
+  // Memoize the computation results handler
+  const handleComputeResults = useCallback((results) => {
+    setComputationResults(results);
+  }, []);
 
   const handleNodeSelect = (node) => {
     setSelectedNodeId(node ? node.id : null);
@@ -45,6 +51,12 @@ function App() {
     ? nodes.find((node) => node.id === selectedNodeId)
     : null;
 
+  // Safe access to computation results
+  const getComputedData = (nodeId) => {
+    if (!computationResults || !nodeId) return null;
+    return computationResults.get(nodeId);
+  };
+
   return (
     <div className="h-screen w-screen flex flex-col dark">
       <MenuBar />
@@ -59,6 +71,7 @@ function App() {
                 <AttributeEditor
                   selectedNode={selectedNode}
                   onPropertyChange={handlePropertyChange}
+                  computedData={getComputedData(selectedNode?.id)}
                 />
               </Allotment.Pane>
               <Allotment.Pane minSize={100}>
@@ -72,6 +85,7 @@ function App() {
                       onEdgesChange={onEdgesChange}
                       setNodes={setNodes}
                       setEdges={setEdges}
+                      onComputeResults={handleComputeResults}
                     />
                   </ReactFlowProvider>
                 </div>

@@ -16,6 +16,13 @@ export const defaultData = {
       min: 1,
       max: 10000,
     }
+  },
+  compute: async (inputData, properties) => {
+    return {
+      type: 'canvas',
+      width: properties.width.value,
+      height: properties.height.value
+    };
   }
 };
 

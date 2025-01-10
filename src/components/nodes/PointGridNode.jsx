@@ -10,6 +10,25 @@ export const defaultData = {
       min: 0.1,
       max: 100.0,
     }
+  },
+  // Add compute function
+  compute: async (inputData, properties) => {
+    const canvas = inputData.default;
+    if (!canvas || canvas.type !== 'canvas') return null;
+
+    const points = [];
+    const spacing = properties.spacing.value;
+    
+    for (let x = 0; x < canvas.width; x += spacing) {
+      for (let y = 0; y < canvas.height; y += spacing) {
+        points.push({ x, y });
+      }
+    }
+
+    return {
+      type: 'points',
+      points: points
+    };
   }
 };
 
@@ -20,10 +39,7 @@ const PointGridNode = (props) => {
   }];
 
   return (
-    <BaseNode 
-      {...props} 
-      inputs={inputs}
-    >
+    <BaseNode {...props} inputs={inputs}>
     </BaseNode>
   );
 };
