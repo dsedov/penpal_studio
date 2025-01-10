@@ -89,6 +89,7 @@ function App() {
                       setNodes={setNodes}
                       setEdges={setEdges}
                       onComputeResults={handleComputeResults}
+                      computationResults={computationResults}
                     />
                   </ReactFlowProvider>
                 </div>

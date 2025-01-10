@@ -14,20 +14,30 @@ export const defaultData = {
     }
   },
   compute: async (inputData, properties) => {
-    const inputCanvas = inputData.default;
-    if (!inputCanvas) return null;
-
-    // Clone the input canvas to avoid modifying the original
-    const canvas = inputCanvas.clone();
-    const spacing = properties.spacing.value;
-    
-    // Create grid of points
-    for (let x = 0; x < canvas.size.x; x += spacing) {
-      for (let y = 0; y < canvas.size.y; y += spacing) {
-        canvas.point(x, y);
-      }
+    console.log('PointGrid compute input:', inputData);
+    const inputCanvas = inputData.default?.result;
+    if (!inputCanvas) {
+      console.log('PointGrid no input canvas');
+      return { error: 'PointGrid requires a canvas input' };
     }
-    return canvas;
+
+    try {
+      // Clone the input canvas to avoid modifying the original
+      const canvas = inputCanvas.clone();
+      const spacing = properties.spacing.value;
+      
+      // Create grid of points
+      for (let x = 0; x < canvas.size.x; x += spacing) {
+        for (let y = 0; y < canvas.size.y; y += spacing) {
+          canvas.point(x, y);
+        }
+      }
+      console.log('PointGrid success:', canvas);
+      return { result: canvas, error: null };
+    } catch (error) {
+      console.log('PointGrid error:', error);
+      return { error: `Failed to create point grid: ${error.message}` };
+    }
   }
 };
 
@@ -38,7 +48,7 @@ const PointGridNode = (props) => {
   }];
 
   return (
-    <BaseNode {...props} inputs={inputs}>
+    <BaseNode {...props} inputs={inputs} hasError={props.hasError}>
     </BaseNode>
   );
 };

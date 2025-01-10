@@ -63,7 +63,6 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
   return (
     <div className="w-full h-full bg-gray-100 p-4 overflow-y-auto">
       <div className="bg-white rounded shadow p-4">
-
         {/* Simple tab buttons */}
         <div className="flex mb-4 space-x-2">
           <button
@@ -92,6 +91,14 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
           </button>
         </div>
 
+        {/* Show error message if present */}
+        {(computedData?.error || computedData?.result?.error) && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+            <h3 className="font-bold mb-1">Computation Error</h3>
+            <p>{computedData.error || computedData.result.error}</p>
+          </div>
+        )}
+
         {/* Tab content */}
         {activeTab === 'properties' ? (
           <>
@@ -118,14 +125,14 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
           /* Computed tab: show computation results */
           <div>
             <h2 className="text-lg font-semibold mb-4">Computed Data</h2>
-            {computedData ? (
+            {computedData && !computedData.result?.error ? (
               <div className="space-y-4">
                 <div>
                   <h3 className="font-medium mb-2">Canvas Properties</h3>
                   <CodeInput
                     value={JSON.stringify({
-                      size: computedData.size,
-                      backgroundColor: computedData.backgroundColor
+                      size: computedData.result?.result?.size,
+                      backgroundColor: computedData.result?.result?.backgroundColor
                     }, null, 2)}
                     onChange={() => {}}
                     language="json"
@@ -133,18 +140,18 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
                   />
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Points ({computedData.points?.length || 0})</h3>
+                  <h3 className="font-medium mb-2">Points ({computedData.result?.result?.points?.length || 0})</h3>
                   <CodeInput
-                    value={JSON.stringify(computedData.points, null, 2)}
+                    value={JSON.stringify(computedData.result?.result?.points, null, 2)}
                     onChange={() => {}}
                     language="json"
                     readOnly
                   />
                 </div>
                 <div>
-                  <h3 className="font-medium mb-2">Lines ({computedData.lines?.length || 0})</h3>
+                  <h3 className="font-medium mb-2">Lines ({computedData.result?.result?.lines?.length || 0})</h3>
                   <CodeInput
-                    value={JSON.stringify(computedData.lines, null, 2)}
+                    value={JSON.stringify(computedData.result?.result?.lines, null, 2)}
                     onChange={() => {}}
                     language="json"
                     readOnly

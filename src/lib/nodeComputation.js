@@ -64,38 +64,54 @@ const COMPUTE_THROTTLE = 50; // Reduce throttle time for better responsiveness
 
 // Main function to compute the entire graph
 export const computeGraph = async (nodes, edges) => {
-  // Throttle computations
-  const now = Date.now();
-  if (now - lastComputeTime < COMPUTE_THROTTLE) {
-    // Only use cache if nodes and edges haven't changed
-    if (computationCache.size > 0) {
-      return computationCache;
-    }
-  }
-  lastComputeTime = now;
-
-  const outputNode = nodes.find(node => node.data.isOutput);
-  if (!outputNode) {
-    computationCache = new Map();
-    return computationCache;
-  }
-
-  const computationOrder = getComputationOrder(outputNode, nodes, edges);
   const results = new Map();
+  const visited = new Set();
 
-  for (const node of computationOrder) {
-    const inputNodes = getInputNodes(node, nodes, edges);
-    const inputData = {};
+  const computeNodeOutput = async (nodeId) => {
+    if (visited.has(nodeId)) return results.get(nodeId);
+    visited.add(nodeId);
 
-    inputNodes.forEach(({ inputId, node: inputNode }) => {
-      inputData[inputId] = results.get(inputNode.id);
-    });
+    const node = nodes.find(n => n.id === nodeId);
+    if (!node) return null;
 
-    const output = await computeNodeOutput(node, inputData, nodes, edges);
-    results.set(node.id, output);
+    console.log(`Computing node ${nodeId} (${node.type})`);
+
+    try {
+      // Get input data
+      const inputData = {};
+      const inputEdges = edges.filter(edge => edge.target === nodeId);
+
+      // Process each input edge
+      for (const edge of inputEdges) {
+        const sourceResult = await computeNodeOutput(edge.source);
+        console.log(`Input from node ${edge.source}:`, sourceResult);
+        if (sourceResult?.error) {
+          // If input has error, propagate it
+          console.log(`Error propagated from input ${edge.source}:`, sourceResult.error);
+          return { error: `Input error: ${sourceResult.error}` };
+        }
+        if (edge.targetHandle) {
+          inputData[edge.targetHandle] = sourceResult?.result;
+        } else {
+          inputData.default = sourceResult?.result;
+        }
+      }
+
+      // Compute result
+      const result = await node.data.compute(inputData, node.data.properties);
+      console.log(`Result for node ${nodeId}:`, result);
+      return { result, error: null };
+    } catch (error) {
+      console.log(`Error in node ${nodeId}:`, error.message);
+      return { error: error.message };
+    }
+  };
+
+  // Compute for all nodes
+  for (const node of nodes) {
+    results.set(node.id, await computeNodeOutput(node.id));
   }
 
-  computationCache = results;
   return results;
 };
 

@@ -1,18 +1,15 @@
 import CanvasNode, { defaultData as canvasDefaultData } from './CanvasNode';
 import PointGridNode, { defaultData as pointGridDefaultData } from './PointGridNode';
-import CloneNode, { defaultData as cloneDefaultData } from './CloneNode';
-import MergeNode, { defaultData as mergeDefaultData } from './MergeNode';  // Added this
+import MergeNode, { defaultData as mergeDefaultData } from './MergeNode';
 
 export const nodeTypes = {
-  canvas: CanvasNode,
-  pointGrid: PointGridNode,
-  clone: CloneNode,
-  merge: MergeNode  // Added this
+  canvas: (props) => <CanvasNode {...props} />,
+  pointGrid: (props) => <PointGridNode {...props} />,
+  merge: (props) => <MergeNode {...props} />
 };
 
 export const defaultNodeData = {
   canvas: canvasDefaultData,
   pointGrid: pointGridDefaultData,
-  clone: cloneDefaultData,
-  merge: mergeDefaultData  // Added this
+  merge: mergeDefaultData
 };

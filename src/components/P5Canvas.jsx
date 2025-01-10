@@ -34,44 +34,45 @@ const P5Canvas = ({ computedData }) => {
   };
 
   const drawCanvas = (p5, viewport, topLeft, bottomRight) => {
-    if (!computedData) return;
+    if (!computedData?.result?.result) return;
+    const canvas = computedData.result.result;
 
     // Set background color if provided
-    if (computedData.backgroundColor) {
+    if (canvas.backgroundColor) {
       p5.push();
-      p5.fill(computedData.backgroundColor);
+      p5.fill(canvas.backgroundColor);
       p5.stroke(100);
       p5.strokeWeight(1 / viewport.zoom);
       // Draw rectangle representing the canvas
-      p5.rect(0, 0, computedData.size.x, computedData.size.y);
+      p5.rect(0, 0, canvas.size.x, canvas.size.y);
       p5.pop();
     }
 
     // Draw points
-    if (computedData.points && computedData.points.length > 0) {
+    if (canvas.points && canvas.points.length > 0) {
       p5.push();
       p5.strokeWeight(4 / viewport.zoom);
       p5.stroke(0);
       p5.fill(255);
 
-      computedData.points.forEach(point => {
+      canvas.points.forEach(point => {
         p5.circle(point.x, point.y, 8 / viewport.zoom);
       });
       p5.pop();
     }
 
     // Draw lines
-    if (computedData.lines && computedData.lines.length > 0) {
+    if (canvas.lines && canvas.lines.length > 0) {
       p5.push();
       p5.strokeWeight(2 / viewport.zoom);
       p5.stroke(0);
       p5.noFill();
 
-      computedData.lines.forEach(line => {
+      canvas.lines.forEach(line => {
         if (line.points.length > 1) {
           p5.beginShape();
           line.points.forEach(pointId => {
-            const point = computedData.points[pointId];
+            const point = canvas.points[pointId];
             if (point) {
               p5.vertex(point.x, point.y);
             }

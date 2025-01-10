@@ -22,6 +22,7 @@ const Flow = ({
   setNodes,
   setEdges,
   onComputeResults,
+  computationResults,
 }) => {
   const reactFlowWrapper = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
@@ -30,6 +31,7 @@ const Flow = ({
   // Define computeGraphOnce first
   const computeGraphOnce = useCallback(async () => {
     const result = await computeGraph(nodes, edges);
+    console.log('Computation results:', result);
     onComputeResults(result);
   }, [nodes, edges, onComputeResults]);
 
@@ -338,7 +340,25 @@ const Flow = ({
       }}
     >
       <ReactFlow
-        nodes={nodes}
+        nodes={nodes.map(node => {
+          const nodeResult = computationResults?.get(node.id);
+          // Check both top-level error and result.error
+          const hasError = nodeResult?.error != null || nodeResult?.result?.error != null;
+          // Create a new node object with the error state
+          const updatedNode = {
+            ...node,
+            data: {
+              ...node.data,
+              hasError
+            }
+          };
+          console.log(`Node ${node.id} (${node.type}):`, {
+            result: nodeResult,
+            hasError,
+            error: nodeResult?.error || nodeResult?.result?.error
+          });
+          return updatedNode;
+        })}
         edges={edges}
         onEdgesChange={handleEdgesChange}
         onNodesDelete={handleNodesDelete}

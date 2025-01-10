@@ -31,13 +31,13 @@ export const defaultData = {
       properties.size.value.y,
       properties.backgroundColor.value
     );
-    return canvas;
+    return { result: canvas, error: null };
   }
 };
 
 const CanvasNode = (props) => {
   return (
-    <BaseNode {...props} showInputs={false}>
+    <BaseNode {...props} showInputs={false} hasError={props.hasError}>
     </BaseNode>
   );
 };
