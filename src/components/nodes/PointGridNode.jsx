@@ -1,5 +1,6 @@
 import React from 'react';
 import BaseNode from './BaseNode';
+import Canvas from '../data/Canvas';
 
 export const defaultData = {
   label: 'Point Grid',
@@ -12,24 +13,24 @@ export const defaultData = {
       max: 100.0,
     }
   },
-  // Add compute function
   compute: async (inputData, properties) => {
-    const canvas = inputData.default;
-    if (!canvas || canvas.type !== 'canvas') return null;
+    const inputCanvas = inputData.default;
+    console.log('PointGrid input:', inputData.default);
+    if (!inputCanvas) return null;
 
-    const points = [];
+    // Clone the input canvas to avoid modifying the original
+    const canvas = inputCanvas.clone();
     const spacing = properties.spacing.value;
     
+    // Create grid of points
     for (let x = 0; x < canvas.size.x; x += spacing) {
       for (let y = 0; y < canvas.size.y; y += spacing) {
-        points.push({ x, y });
+        canvas.point(x, y);
       }
     }
 
-    return {
-      type: 'points',
-      points: points
-    };
+    console.log('PointGrid output:', canvas);
+    return canvas;
   }
 };
 

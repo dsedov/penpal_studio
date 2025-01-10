@@ -7,6 +7,45 @@ class Canvas {
     }
 
     /**
+     * Gets the center point of the canvas
+     * @returns {{x: number, y: number}} The center coordinates
+     */
+    getCenter() {
+        return {
+            x: this.size.x / 2,
+            y: this.size.y / 2
+        };
+    }
+
+    /**
+     * Gets the center of all points in the canvas
+     * @returns {{x: number, y: number}} The centroid of all points
+     */
+    getPointsCenter() {
+        if (this.points.length === 0) return this.getCenter();
+
+        const sum = this.points.reduce((acc, point) => ({
+            x: acc.x + point.x,
+            y: acc.y + point.y
+        }), { x: 0, y: 0 });
+
+        return {
+            x: sum.x / this.points.length,
+            y: sum.y / this.points.length
+        };
+    }
+
+    /**
+     * Iterator for points
+     * @returns {Iterator<{x: number, y: number, attributes: Object}>}
+     */
+    *iteratePoints() {
+        for (const point of this.points) {
+            yield point;
+        }
+    }
+
+    /**
      * Adds a point to the canvas
      * @param {number} x - x coordinate
      * @param {number} y - y coordinate
@@ -159,4 +198,113 @@ class Canvas {
             lines: this.lines
         };
     }
+
+    /**
+     * Creates a deep copy of the canvas
+     * @returns {Canvas} A new Canvas instance with copied data
+     */
+    clone() {
+        const newCanvas = new Canvas(
+            this.size.x,
+            this.size.y,
+            this.backgroundColor
+        );
+        
+        // Deep copy points with their attributes
+        newCanvas.points = this.points.map(point => ({
+            id: point.id,
+            x: point.x,
+            y: point.y,
+            attributes: { ...point.attributes }
+        }));
+        
+        // Deep copy lines
+        newCanvas.lines = this.lines.map(line => ({
+            id: line.id,
+            points: [...line.points]
+        }));
+        
+        return newCanvas;
+    }
+
+    /**
+     * Merges another canvas into this one, creating a new canvas
+     * @param {Canvas} otherCanvas - The canvas to merge with
+     * @returns {Canvas} A new Canvas instance containing merged data
+     */
+    merge(otherCanvas) {
+        // Create new canvas with maximum dimensions
+        const newWidth = Math.max(this.size.x, otherCanvas.size.x);
+        const newHeight = Math.max(this.size.y, otherCanvas.size.y);
+        const mergedCanvas = new Canvas(newWidth, newHeight);
+
+        // Clone current canvas points and lines
+        mergedCanvas.points = this.points.map(point => ({
+            id: point.id,
+            x: point.x,
+            y: point.y,
+            attributes: { ...point.attributes }
+        }));
+
+        mergedCanvas.lines = this.lines.map(line => ({
+            id: line.id,
+            points: [...line.points]
+        }));
+
+        // Find maximum IDs from current canvas
+        const maxPointId = Math.max(...this.points.map(p => p.id), -1);
+        const maxLineId = Math.max(...this.lines.map(l => l.id), -1);
+
+        // Create ID mapping for points from other canvas
+        const pointIdMap = new Map();
+
+        // Add points from other canvas with adjusted IDs
+        otherCanvas.points.forEach(point => {
+            const newId = point.id + maxPointId + 1;
+            pointIdMap.set(point.id, newId);
+            
+            mergedCanvas.points.push({
+                id: newId,
+                x: point.x,
+                y: point.y,
+                attributes: { ...point.attributes }
+            });
+        });
+
+        // Add lines from other canvas with adjusted point IDs and line IDs
+        otherCanvas.lines.forEach(line => {
+            mergedCanvas.lines.push({
+                id: line.id + maxLineId + 1,
+                points: line.points.map(pointId => pointIdMap.get(pointId))
+            });
+        });
+
+        return mergedCanvas;
+    }
+
+    /**
+     * Gets all points that are not part of any line
+     * @returns {Array} Array of points that are not used in any line
+     */
+    getUnconnectedPoints() {
+        // Create a set of all point IDs used in lines
+        const connectedPointIds = new Set(
+            this.lines.flatMap(line => line.points)
+        );
+
+        // Return points that are not in the connected set
+        return this.points.filter(point => !connectedPointIds.has(point.id));
+    }
+
+    /**
+     * Iterator for lines
+     * @returns {Iterator<{id: number, points: number[]}>}
+     */
+    *iterateLines() {
+        for (const line of this.lines) {
+            yield line;
+        }
+    }
 }
+
+export default Canvas;

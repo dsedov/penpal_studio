@@ -119,12 +119,38 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
           <div>
             <h2 className="text-lg font-semibold mb-4">Computed Data</h2>
             {computedData ? (
-              <CodeInput
-                value={JSON.stringify(computedData, null, 2)}
-                onChange={() => {}}
-                language="json"
-                readOnly
-              />
+              <div className="space-y-4">
+                <div>
+                  <h3 className="font-medium mb-2">Canvas Properties</h3>
+                  <CodeInput
+                    value={JSON.stringify({
+                      size: computedData.size,
+                      backgroundColor: computedData.backgroundColor
+                    }, null, 2)}
+                    onChange={() => {}}
+                    language="json"
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <h3 className="font-medium mb-2">Points ({computedData.points.length})</h3>
+                  <CodeInput
+                    value={JSON.stringify(computedData.points, null, 2)}
+                    onChange={() => {}}
+                    language="json"
+                    readOnly
+                  />
+                </div>
+                <div>
+                  <h3 className="font-medium mb-2">Lines ({computedData.lines.length})</h3>
+                  <CodeInput
+                    value={JSON.stringify(computedData.lines, null, 2)}
+                    onChange={() => {}}
+                    language="json"
+                    readOnly
+                  />
+                </div>
+              </div>
             ) : (
               <div className="text-gray-500">
                 No computed data available for this node

@@ -1,5 +1,6 @@
 import React from 'react';
 import BaseNode from './BaseNode';
+import Canvas from '../data/Canvas';
 
 export const defaultData = {
   label: 'Canvas',
@@ -25,10 +26,12 @@ export const defaultData = {
     }
   },
   compute: async (inputData, properties) => {
-    return {
-      type: 'canvas',
-      size: properties.size.value
-    };
+    const canvas = new Canvas(
+      properties.size.value.x,
+      properties.size.value.y,
+      properties.backgroundColor.value
+    );
+    return canvas;
   }
 };
 

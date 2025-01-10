@@ -4,18 +4,22 @@ import BaseNode from './BaseNode';
 export const defaultData = {
   label: 'Merge',
   compute: async (inputData, properties) => {
-    // Merge all input points
-    const allPoints = [];
-    Object.values(inputData).forEach(input => {
-      if (input?.type === 'points') {
-        allPoints.push(...input.points);
-      }
-    });
+    // Get all input canvases
+    const canvases = Object.values(inputData)
+      .filter(input => input && input instanceof Canvas);
 
-    return {
-      type: 'points',
-      points: allPoints
-    };
+    if (canvases.length === 0) return null;
+    if (canvases.length === 1) return canvases[0];
+
+    // Start with the first canvas and iteratively merge the rest
+    let mergedCanvas = canvases[0].clone();
+    
+    // Iterate through the remaining canvases and merge them one by one
+    for (let i = 1; i < canvases.length; i++) {
+      mergedCanvas = mergedCanvas.merge(canvases[i]);
+    }
+
+    return mergedCanvas;
   }
 };
 
