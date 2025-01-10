@@ -34,7 +34,7 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
       onChange: (value) => handlePropertyChange(propertyName, value),
       min: property.min,
       max: property.max,
-      label: propertyName
+      label: property.label != null ? property.label : propertyName
     };
 
     switch (property.type) {

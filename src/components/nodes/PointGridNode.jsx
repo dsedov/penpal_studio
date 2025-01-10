@@ -5,6 +5,7 @@ export const defaultData = {
   label: 'Point Grid',
   properties: {
     spacing: {
+      label: 'Spacing',
       type: 'float',
       value: 20.0,
       min: 0.1,
@@ -19,8 +20,8 @@ export const defaultData = {
     const points = [];
     const spacing = properties.spacing.value;
     
-    for (let x = 0; x < canvas.width; x += spacing) {
-      for (let y = 0; y < canvas.height; y += spacing) {
+    for (let x = 0; x < canvas.size.x; x += spacing) {
+      for (let y = 0; y < canvas.size.y; y += spacing) {
         points.push({ x, y });
       }
     }
