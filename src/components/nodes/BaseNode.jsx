@@ -22,7 +22,7 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
   };
 
   return (
-    <div className={`relative bg-white rounded-lg shadow-lg p-4 min-w-[200px] border-4 ${
+    <div className={`relative bg-white rounded-xl shadow-lg p-4 min-w-[200px] border-4 ${
       selected 
         ? data.isMultiSelected 
           ? 'border-blue-500' 
@@ -58,10 +58,8 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
         title="Set as output"
         onClick={() => data.onToggleOutput(id)}
       />
-      <div className="mb-2 font-bold border-b pb-2">{data.label}</div>
-      <div className="bg-gray-50 p-2 rounded mb-2">
-        {data.children}
-      </div>
+      <div className="font-bold">{data.label}</div>
+
       {/* Output Handle */}
       <Handle
         type="source"

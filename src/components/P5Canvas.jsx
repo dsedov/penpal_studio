@@ -51,12 +51,11 @@ const P5Canvas = ({ computedData }) => {
     // Draw points
     if (canvas.points && canvas.points.length > 0) {
       p5.push();
-      p5.strokeWeight(4 / viewport.zoom);
-      p5.stroke(0);
+      p5.noStroke();
       p5.fill(255);
 
       canvas.points.forEach(point => {
-        p5.circle(point.x, point.y, 8 / viewport.zoom);
+        p5.circle(point.x, point.y, 4 / viewport.zoom);
       });
       p5.pop();
     }
