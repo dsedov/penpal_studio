@@ -1,31 +1,74 @@
-import React from 'react';
-import { defaultNodeData } from './nodes/nodeTypes';
+import React, { useState } from 'react';
+import { nodeTypes, defaultNodeData } from './nodes/nodeTypes';
 
-const ContextMenu = ({ position, onCreateNode }) => {
-
-  if (!position?.show) return null;
-
-  const menuItems = Object.keys(defaultNodeData).map(type => ({
-    type,
-    label: defaultNodeData[type].label
-  }));
-
+const SubMenu = ({ category, nodes, onCreateNode, position }) => {
   return (
-    <div
-      className="fixed bg-white rounded-lg shadow-lg py-2"
+    <div 
+      className="absolute bg-white rounded shadow-lg py-1"
       style={{
-        left: position.mouseX,
-        top: position.mouseY,
-        zIndex: 1000
+        left: '100%',
+        top: '0',
+        marginLeft: '2px',
+        minWidth: '120px'
       }}
     >
-      {menuItems.map(({ type, label }) => (
+      {nodes.map(({ type, label }) => (
         <div
           key={type}
-          className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+          className="px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm"
           onClick={() => onCreateNode(type)}
         >
           {label}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const ContextMenu = ({ position, onCreateNode }) => {
+  const [activeCategory, setActiveCategory] = useState(null);
+
+  if (!position?.show) return null;
+
+  // Group nodes by category
+  const nodesByCategory = Object.entries(defaultNodeData).reduce((acc, [type, data]) => {
+    const category = data.menu?.category || 'Other';
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push({
+      type,
+      label: data.menu.label
+    });
+    return acc;
+  }, {});
+
+  return (
+    <div
+      className="fixed bg-white rounded shadow-lg py-1"
+      style={{
+        left: position.mouseX,
+        top: position.mouseY,
+        zIndex: 1000,
+        minWidth: '120px'
+      }}
+    >
+      {Object.entries(nodesByCategory).map(([category, nodes]) => (
+        <div 
+          key={category}
+          className="relative px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm"
+          onMouseEnter={() => setActiveCategory(category)}
+          onMouseLeave={() => setActiveCategory(null)}
+        >
+          <span>{category}</span>
+          {activeCategory === category && (
+            <SubMenu 
+              category={category}
+              nodes={nodes}
+              onCreateNode={onCreateNode}
+              position={position}
+            />
+          )}
         </div>
       ))}
     </div>

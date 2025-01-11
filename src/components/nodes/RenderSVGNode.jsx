@@ -5,6 +5,11 @@ import { writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 
 export const defaultData = {
   label: 'Render SVG',
+  menu: {
+    category: 'Render',
+    label: 'SVG File',
+    description: 'Exports the canvas to an SVG file'
+  },
   properties: {
     filePath: { type: 'file', value: '', extension: '.svg' }
   },

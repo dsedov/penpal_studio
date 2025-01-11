@@ -4,6 +4,11 @@ import Canvas from '../data/Canvas';
 
 export const defaultData = {
   label: 'Point Grid',
+  menu: {
+    category: 'Generate',
+    label: 'Point Grid',
+    description: 'Generates a grid of points with specified spacing'
+  },
   properties: {
     spacing: {
       label: 'Spacing',

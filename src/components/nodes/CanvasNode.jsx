@@ -4,6 +4,11 @@ import Canvas from '../data/Canvas';
 
 export const defaultData = {
   label: 'Canvas',
+  menu: {
+    category: 'Generate',
+    label: 'Canvas',
+    description: 'Creates a blank canvas with specified size and background color'
+  },
   properties: {
     size: {
       label: 'Size',
