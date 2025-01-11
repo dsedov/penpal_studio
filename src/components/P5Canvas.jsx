@@ -9,7 +9,6 @@ const P5Canvas = ({ computedData }) => {
     zoom: 1
   });
   const p5Ref = useRef(null);
-  const isSpacePressed = useRef(false);
   const prevMouseRef = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
 
@@ -25,12 +24,7 @@ const P5Canvas = ({ computedData }) => {
     
     canvas.style('width', '100%');
     canvas.style('height', '100%');
-    
-    p5.canvas.addEventListener('auxclick', (e) => {
-      if (e.button === 1) {
-        e.preventDefault();
-      }
-    });
+    canvas.style('cursor', 'grab');
   };
 
   const drawCanvas = (p5, viewport, topLeft, bottomRight) => {
@@ -158,12 +152,11 @@ const P5Canvas = ({ computedData }) => {
     p5.pop();
 
     // Handle panning
-    if ((p5.mouseIsPressed && p5.mouseButton === p5.CENTER) || 
-        (isSpacePressed.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT)) {
-      
+    if (p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
       if (!isPanning.current) {
         isPanning.current = true;
         prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
+        p5.canvas.style.cursor = 'grabbing';
       } else {
         const dx = (p5.mouseX - prevMouseRef.current.x) / viewport.zoom;
         const dy = (p5.mouseY - prevMouseRef.current.y) / viewport.zoom;
@@ -173,6 +166,7 @@ const P5Canvas = ({ computedData }) => {
       }
     } else {
       isPanning.current = false;
+      p5.canvas.style.cursor = 'grab';
     }
   };
 
