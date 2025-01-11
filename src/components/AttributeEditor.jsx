@@ -5,6 +5,7 @@ import { Vec2Input } from './inputs/Vec2Input';
 import { ColorInput } from './inputs/ColorInput';
 import { StringInput } from './inputs/StringInput';
 import { CodeInput } from './inputs/CodeInput';
+import { save } from '@tauri-apps/plugin-dialog';
 
 const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
   // Add local tab state
@@ -64,21 +65,31 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
               type="text"
               className="flex-grow px-2 py-1 border rounded"
               value={property.value}
-              readOnly
               placeholder="Click to select file..."
+              onChange={(e) => handlePropertyChange(propertyName, e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.target.value.toLowerCase().endsWith('.svg')) {
+                  handlePropertyChange(propertyName, e.target.value + '.svg');
+                }
+              }}
             />
             <button
               className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
               onClick={async () => {
-                const { remote } = window.require('electron');
-                const { dialog } = remote;
-                const result = await dialog.showSaveDialog({
-                  filters: [
-                    { name: 'SVG', extensions: ['svg'] }
-                  ]
-                });
-                if (!result.canceled) {
-                  handlePropertyChange(propertyName, result.filePath);
+                try {
+                  const filePath = await save({
+                    filters: [{
+                      name: 'SVG',
+                      extensions: ['svg']
+                    }],
+                    defaultPath: property.value || undefined
+                  });
+                  
+                  if (filePath) {
+                    handlePropertyChange(propertyName, filePath);
+                  }
+                } catch (err) {
+                  console.error('Failed to show save dialog:', err);
                 }
               }}
             >
