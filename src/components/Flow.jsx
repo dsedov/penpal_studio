@@ -31,7 +31,6 @@ const Flow = ({
   // Define computeGraphOnce first
   const computeGraphOnce = useCallback(async () => {
     const result = await computeGraph(nodes, edges);
-    console.log('Computation results:', result);
     onComputeResults(result);
   }, [nodes, edges, onComputeResults]);
 
@@ -168,17 +167,23 @@ const Flow = ({
   // Check if the connection is valid
   const onConnect = useCallback((params) => {
     setEdges((eds) => {
-      // Find the target node
       const targetNode = nodes.find(node => node.id === params.target);
       const isMergeNode = targetNode?.type === 'merge';
       
+      // Create new edge with unique ID
+      const newEdge = {
+        ...params,
+        id: generateUniqueId('edge_', eds),
+        animated: true,
+        data: {
+          label: `Connection ${params.source} → ${params.target}`
+        },
+        style: { stroke: '#999', strokeWidth: 2 }
+      };
+      
       // For merge nodes, allow multiple connections
       if (isMergeNode) {
-        return [...eds, { 
-          ...params, 
-          animated: true,
-          style: { stroke: '#999', strokeWidth: 2 }
-        }];
+        return [...eds, newEdge];
       }
       
       // For other nodes, replace existing connection to the same input
@@ -192,11 +197,7 @@ const Flow = ({
         ? eds.filter(edge => edge !== existingConnection)
         : eds;
 
-      return [...filteredEdges, { 
-        ...params, 
-        animated: true,
-        style: { stroke: '#999', strokeWidth: 2 }
-      }];
+      return [...filteredEdges, newEdge];
     });
     setTimeout(() => computeGraphOnce(), 0);
   }, [setEdges, nodes, computeGraphOnce]);
@@ -262,18 +263,18 @@ const Flow = ({
     });
   }, [project]);
 
-  const generateUniqueId = (nodes) => {
+  const generateUniqueId = (prefix, items) => {
     // Find the highest existing ID and add 1
-    const maxId = nodes.reduce((max, node) => {
-      const numId = parseInt(node.id);
+    const maxId = items.reduce((max, item) => {
+      const numId = parseInt(item.id.replace(prefix, ''));
       return numId > max ? numId : max;
     }, 0);
-    return `${maxId + 1}`;
+    return `${prefix}${maxId + 1}`;
   };
 
   const onCreateNode = useCallback((nodeType) => {
     const newNode = {
-      id: generateUniqueId(nodes),
+      id: generateUniqueId('node_', nodes),
       position: contextMenu.flowPosition,
       type: nodeType,
       selected: false,
@@ -329,6 +330,81 @@ const Flow = ({
     setTimeout(() => computeGraphOnce(), 0);
   }, [setEdges, setNodes, nodes, edges, onNodeSelect, computeGraphOnce]);
 
+  const onEdgeClick = useCallback((event, clickedEdge) => {
+    event.preventDefault();
+    
+    if (!event.shiftKey) {
+      // Single selection mode
+      setEdges((eds) => 
+        eds.map((edge) => ({
+          ...edge,
+          selected: edge.id === clickedEdge.id,
+          data: {
+            ...edge.data,
+            isMultiSelected: false
+          }
+        }))
+      );
+      // Clear node selection
+      setNodes(nds => nds.map(node => ({
+        ...node,
+        selected: false,
+        data: {
+          ...node.data,
+          isMultiSelected: false
+        }
+      })));
+      onNodeSelect({
+        ...clickedEdge,
+        type: 'edge',
+        sourceNode: nodes.find(n => n.id === clickedEdge.source),
+        targetNode: nodes.find(n => n.id === clickedEdge.target)
+      });
+    } else {
+      // Shift-click mode for edges
+      setEdges((eds) => {
+        const currentSelected = eds.filter(e => e.selected);
+        
+        let updatedEdges;
+        if (clickedEdge.selected) {
+          updatedEdges = eds.map(edge => ({
+            ...edge,
+            selected: edge.id !== clickedEdge.id && edge.selected,
+            data: {
+              ...edge.data,
+              isMultiSelected: edge.id !== clickedEdge.id && edge.selected && currentSelected.length > 2
+            }
+          }));
+        } else {
+          updatedEdges = eds.map(edge => ({
+            ...edge,
+            selected: edge.id === clickedEdge.id ? true : edge.selected,
+            data: {
+              ...edge.data,
+              isMultiSelected: (edge.id === clickedEdge.id || edge.selected) && (currentSelected.length > 0)
+            }
+          }));
+        }
+        
+        // Update selection in attribute editor
+        const selectedEdges = updatedEdges.filter(e => e.selected);
+        if (selectedEdges.length === 1) {
+          const edge = selectedEdges[0];
+          onNodeSelect({
+            ...edge,
+            type: 'edge',
+            sourceNode: nodes.find(n => n.id === edge.source),
+            targetNode: nodes.find(n => n.id === edge.target)
+          });
+        } else {
+          onNodeSelect(null);
+        }
+        
+        return updatedEdges;
+      });
+    }
+  }, [setEdges, setNodes, nodes, onNodeSelect]);
+
   return (
     <div 
       className="reactflow-wrapper bg-gray-100" 
@@ -340,26 +416,22 @@ const Flow = ({
       }}
     >
       <ReactFlow
-        nodes={nodes.map(node => {
-          const nodeResult = computationResults?.get(node.id);
-          // Check both top-level error and result.error
-          const hasError = nodeResult?.error != null || nodeResult?.result?.error != null;
-          // Create a new node object with the error state
-          const updatedNode = {
-            ...node,
-            data: {
-              ...node.data,
-              hasError
-            }
-          };
-          console.log(`Node ${node.id} (${node.type}):`, {
-            result: nodeResult,
-            hasError,
-            error: nodeResult?.error || nodeResult?.result?.error
-          });
-          return updatedNode;
-        })}
-        edges={edges}
+        nodes={nodes.map(node => ({
+          ...node,
+          data: {
+            ...node.data,
+            hasError: computationResults?.get(node.id)?.error != null
+          }
+        }))}
+        edges={edges.map(edge => ({
+          ...edge,
+          type: 'default',
+          style: {
+            stroke: edge.selected ? '#666' : '#999',
+            strokeWidth: edge.selected ? 3 : 2,
+            cursor: 'pointer'
+          }
+        }))}
         onEdgesChange={handleEdgesChange}
         onNodesDelete={handleNodesDelete}
         onConnect={onConnect}
@@ -367,7 +439,7 @@ const Flow = ({
         onConnectEnd={onConnectEnd}
         onContextMenu={onContextMenu}
         onNodeClick={onNodeClick}
-        onSelectionChange={onSelectionChange}
+        onEdgeClick={onEdgeClick}
         nodeTypes={nodeTypes}
         defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
         className="reactflow-container"
@@ -378,7 +450,7 @@ const Flow = ({
         snapToGrid={true}
         snapGrid={[20, 20]}
         connectionMode="loose"
-        selectNodesOnDrag={true} 
+        selectNodesOnDrag={true}
         multiSelectionKeyCode="Shift"
         selectionKeyCode="Shift"
         onNodesChange={(changes) => {
@@ -387,7 +459,10 @@ const Flow = ({
             onNodesChange(nonRemoveChanges);
           }
         }}
-        deleteKeyCode="Delete"
+        edgesUpdatable={true}
+        edgesFocusable={true}
+        elementsSelectable={true}
+        deleteKeyCode={['Backspace', 'Delete']}
         onInit={() => {
           // Prevent default delete behavior
           document.addEventListener('keydown', (e) => {

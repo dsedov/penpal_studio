@@ -14,10 +14,8 @@ export const defaultData = {
     }
   },
   compute: async (inputData, properties) => {
-    console.log('PointGrid compute input:', inputData);
     const inputCanvas = inputData.default?.result;
     if (!inputCanvas) {
-      console.log('PointGrid no input canvas');
       return { error: 'PointGrid requires a canvas input' };
     }
 
@@ -32,10 +30,8 @@ export const defaultData = {
           canvas.point(x, y);
         }
       }
-      console.log('PointGrid success:', canvas);
       return { result: canvas, error: null };
     } catch (error) {
-      console.log('PointGrid error:', error);
       return { error: `Failed to create point grid: ${error.message}` };
     }
   }

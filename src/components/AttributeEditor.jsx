@@ -14,11 +14,13 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
     return (
       <div className="w-full h-full bg-gray-100 p-4">
         <div className="bg-gray-50 w-full h-full rounded p-4 text-gray-500">
-          Select a node to edit its properties
+          Select a node or edge to edit its properties
         </div>
       </div>
     );
   }
+
+  const isEdge = selectedNode.type === 'edge';
 
   const properties = selectedNode.data.properties || {};
 
@@ -63,33 +65,51 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
   return (
     <div className="w-full h-full bg-gray-100 p-4 overflow-y-auto">
       <div className="bg-white rounded shadow p-4">
-        {/* Simple tab buttons */}
-        <div className="flex mb-4 space-x-2">
-          <button
-            onClick={() => setActiveTab('properties')}
-            className={`px-3 py-1 rounded ${
-              activeTab === 'properties' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Properties
-          </button>
-          <button
-            onClick={() => setActiveTab('code')}
-            className={`px-3 py-1 rounded ${
-              activeTab === 'code' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Code
-          </button>
-          <button
-            onClick={() => setActiveTab('computed')}
-            className={`px-3 py-1 rounded ${
-              activeTab === 'computed' ? 'bg-blue-500 text-white' : 'bg-gray-200'
-            }`}
-          >
-            Computed
-          </button>
+        {/* Debug info */}
+        <div className="mb-4 p-2 bg-gray-100 rounded text-sm font-mono">
+          {isEdge ? (
+            <>
+              <div>Edge ID: {selectedNode.id}</div>
+              <div>From: {selectedNode.sourceNode?.data?.label} (ID: {selectedNode.source})</div>
+              <div>To: {selectedNode.targetNode?.data?.label} (ID: {selectedNode.target})</div>
+            </>
+          ) : (
+            <>
+              <div>Node ID: {selectedNode.id}</div>
+              <div>Type: {selectedNode.type}</div>
+            </>
+          )}
         </div>
+
+        {/* Show tabs only for nodes, not edges */}
+        {!isEdge && (
+          <div className="flex mb-4 space-x-2">
+            <button
+              onClick={() => setActiveTab('properties')}
+              className={`px-3 py-1 rounded ${
+                activeTab === 'properties' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Properties
+            </button>
+            <button
+              onClick={() => setActiveTab('code')}
+              className={`px-3 py-1 rounded ${
+                activeTab === 'code' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Code
+            </button>
+            <button
+              onClick={() => setActiveTab('computed')}
+              className={`px-3 py-1 rounded ${
+                activeTab === 'computed' ? 'bg-blue-500 text-white' : 'bg-gray-200'
+              }`}
+            >
+              Computed
+            </button>
+          </div>
+        )}
 
         {/* Show error message if present */}
         {(computedData?.error || computedData?.result?.error) && (
