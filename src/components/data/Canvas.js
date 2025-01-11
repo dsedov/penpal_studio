@@ -236,7 +236,7 @@ class Canvas {
         // Create new canvas with maximum dimensions
         const newWidth = Math.max(this.size.x, otherCanvas.size.x);
         const newHeight = Math.max(this.size.y, otherCanvas.size.y);
-        const mergedCanvas = new Canvas(newWidth, newHeight);
+        const mergedCanvas = new Canvas(newWidth, newHeight, this.backgroundColor);
 
         // Clone current canvas points and lines
         mergedCanvas.points = this.points.map(point => ({
