@@ -57,6 +57,35 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
             language={property.language || 'javascript'}
           />
         );
+      case 'file':
+        return (
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              className="flex-grow px-2 py-1 border rounded"
+              value={property.value}
+              readOnly
+              placeholder="Click to select file..."
+            />
+            <button
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              onClick={async () => {
+                const { remote } = window.require('electron');
+                const { dialog } = remote;
+                const result = await dialog.showSaveDialog({
+                  filters: [
+                    { name: 'SVG', extensions: ['svg'] }
+                  ]
+                });
+                if (!result.canceled) {
+                  handlePropertyChange(propertyName, result.filePath);
+                }
+              }}
+            >
+              Browse
+            </button>
+          </div>
+        );
       default:
         return null;
     }
