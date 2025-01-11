@@ -74,8 +74,6 @@ export const computeGraph = async (nodes, edges) => {
     const node = nodes.find(n => n.id === nodeId);
     if (!node) return null;
 
-    console.log(`Computing node ${nodeId} (${node.type})`);
-
     try {
       // Get input data
       const inputData = {};
@@ -84,7 +82,6 @@ export const computeGraph = async (nodes, edges) => {
       // Process each input edge
       for (const edge of inputEdges) {
         const sourceResult = await computeNodeOutput(edge.source);
-        console.log(`Input from node ${edge.source}:`, sourceResult);
         if (sourceResult?.error) {
           // If input has error, propagate it
           console.log(`Error propagated from input ${edge.source}:`, sourceResult.error);
@@ -99,7 +96,6 @@ export const computeGraph = async (nodes, edges) => {
 
       // Compute result
       const result = await node.data.compute(inputData, node.data.properties);
-      console.log(`Result for node ${nodeId}:`, result);
       return { result, error: null };
     } catch (error) {
       console.log(`Error in node ${nodeId}:`, error.message);
