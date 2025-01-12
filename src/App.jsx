@@ -35,8 +35,14 @@ function App() {
   };
 
   const handleOutputToggle = useCallback((nodeId) => {
+    // If clicking the current output node, turn it off
+    if (nodeId === outputNodeId) {
+      setOutputNodeId(null);
+      return;
+    }
+    // Otherwise, set the new output node
     setOutputNodeId(nodeId);
-  }, []);
+  }, [outputNodeId]);
 
   const handlePropertyChange = (nodeId, propertyName, value) => {
     setNodes(nds =>
@@ -118,8 +124,6 @@ function App() {
             compute: defaultData.compute,
             onToggleBypass: (id) => handleBypassToggle(id),
             onToggleOutput: (id) => handleOutputToggle(id),
-            outputNodeId: null,  // Will be updated after all nodes are loaded
-            isOutput: false,     // Reset isOutput state
             bypass: node.data.bypass
           }
         };
@@ -128,9 +132,6 @@ function App() {
       // Update outputNodeId for all nodes
       const savedOutputNode = projectData.nodes.find(node => node.data.isOutput);
       if (savedOutputNode) {
-        reconstructedNodes.forEach(node => {
-          node.data.outputNodeId = savedOutputNode.id;
-        });
         setOutputNodeId(savedOutputNode.id);
       }
 
@@ -175,8 +176,7 @@ function App() {
       },
       data: {
         ...nodeToDuplicate.data,
-        isOutput: false,  // Reset output state for the duplicate
-        bypass: false,    // Reset bypass state for the duplicate
+        bypass: false,
         onToggleBypass: (id) => handleBypassToggle(id),
         onToggleOutput: (id) => handleOutputToggle(id),
       },
@@ -198,20 +198,6 @@ function App() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleDuplicateNode]);
-
-  // Update all nodes when outputNodeId changes
-  useEffect(() => {
-    setNodes(nds => 
-      nds.map(node => ({
-        ...node,
-        data: {
-          ...node.data,
-          outputNodeId,
-          isOutput: node.id === outputNodeId
-        }
-      }))
-    );
-  }, [outputNodeId]);
 
   return (
     <div className="h-screen w-screen flex flex-col dark">

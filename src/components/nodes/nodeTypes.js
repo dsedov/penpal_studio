@@ -4,6 +4,7 @@ import RenderSVGNode, { defaultData as renderSVGDefaultData } from './RenderSVGN
 import MergeNode, { defaultData as mergeDefaultData } from './MergeNode';
 import LineNode, { defaultData as lineDefaultData } from './LineNode';
 import ConnectNearbyNode, { defaultData as connectNearbyDefaultData } from './ConnectNearbyNode';
+import CropNode, { defaultData as cropDefaultData } from './CropNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -12,6 +13,7 @@ export const nodeTypes = {
   merge: MergeNode,
   line: LineNode,
   connectNearby: ConnectNearbyNode,
+  crop: CropNode,
 };
 
 export const defaultNodeData = {
@@ -21,4 +23,5 @@ export const defaultNodeData = {
   merge: mergeDefaultData,
   line: lineDefaultData,
   connectNearby: connectNearbyDefaultData,
+  crop: cropDefaultData,
 }; 
