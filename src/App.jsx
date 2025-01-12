@@ -16,6 +16,7 @@ function App() {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [outputNodeId, setOutputNodeId] = useState(null);
   const [computationResults, setComputationResults] = useState(null);
+  const [isPanning, setIsPanning] = useState(false);
 
   // Handle computation results
   const handleComputeResults = useCallback((results) => {
@@ -56,6 +57,26 @@ function App() {
   const selectedNode = selectedNodeId
     ? nodes.find((node) => node.id === selectedNodeId)
     : null;
+
+  const onMouseDown = (event) => {
+    if (!event.target.closest('.react-flow')) return;
+    if (event.button === 0) {
+      setIsPanning(true);
+    }
+  };
+
+  const onMouseUp = () => {
+    setIsPanning(false);
+  };
+
+  const onMouseMove = (event) => {
+    if (!isPanning) return;
+    if (!event.target.closest('.react-flow')) {
+      setIsPanning(false);
+      return;
+    }
+    // ... panning logic ...
+  };
 
   return (
     <div className="h-screen w-screen flex flex-col dark">

@@ -3,6 +3,7 @@ import Sketch from 'react-p5';
 
 const P5Canvas = ({ computedData }) => {
   const containerRef = useRef(null);
+  const isMouseOver = useRef(false);
   const viewportRef = useRef({
     x: 0,
     y: 0,
@@ -75,6 +76,15 @@ const P5Canvas = ({ computedData }) => {
       });
       p5.pop();
     }
+  };
+
+  const mouseEntered = () => {
+    isMouseOver.current = true;
+  };
+
+  const mouseLeft = () => {
+    isMouseOver.current = false;
+    isPanning.current = false;
   };
 
   const draw = (p5) => {
@@ -152,7 +162,7 @@ const P5Canvas = ({ computedData }) => {
     p5.pop();
 
     // Handle panning
-    if (p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
+    if (isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
       if (!isPanning.current) {
         isPanning.current = true;
         prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
@@ -171,6 +181,9 @@ const P5Canvas = ({ computedData }) => {
   };
 
   const mouseWheel = (p5, event) => {
+    // Only handle wheel events if the mouse is over the canvas
+    if (!isMouseOver.current) return;
+
     event.preventDefault();
     const viewport = viewportRef.current;
     
@@ -229,7 +242,12 @@ const P5Canvas = ({ computedData }) => {
   }, []);
 
   return (
-    <div ref={containerRef} className="w-full h-full">
+    <div 
+      ref={containerRef} 
+      className="w-full h-full"
+      onMouseEnter={mouseEntered}
+      onMouseLeave={mouseLeft}
+    >
       <Sketch
         setup={setup}
         draw={draw}
