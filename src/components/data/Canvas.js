@@ -221,7 +221,9 @@ class Canvas {
         // Deep copy lines
         newCanvas.lines = this.lines.map(line => ({
             id: line.id,
-            points: [...line.points]
+            points: [...line.points],
+            color: line.color,
+            thickness: line.thickness
         }));
         
         return newCanvas;
@@ -248,7 +250,9 @@ class Canvas {
 
         mergedCanvas.lines = this.lines.map(line => ({
             id: line.id,
-            points: [...line.points]
+            points: [...line.points],
+            color: line.color,
+            thickness: line.thickness
         }));
 
         // Find maximum IDs from current canvas
@@ -275,7 +279,9 @@ class Canvas {
         otherCanvas.lines.forEach(line => {
             mergedCanvas.lines.push({
                 id: line.id + maxLineId + 1,
-                points: line.points.map(pointId => pointIdMap.get(pointId))
+                points: line.points.map(pointId => pointIdMap.get(pointId)),
+                color: line.color,
+                thickness: line.thickness
             });
         });
 
