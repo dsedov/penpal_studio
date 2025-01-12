@@ -1,7 +1,15 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Sketch from 'react-p5';
+import ToolbarButton from './ToolbarButton';
+import { BiMove } from 'react-icons/bi';
+import { BsCursor } from 'react-icons/bs';
+import { TbRefresh } from 'react-icons/tb';
+import { BsCircle } from 'react-icons/bs';
 
-const P5Canvas = ({ computedData }) => {
+const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
+  const [mode, setMode] = useState('pan'); // 'pan' or 'select'
+  const [liveUpdate, setLiveUpdate] = useState(true);
+  const [showPoints, setShowPoints] = useState(true);
   const containerRef = useRef(null);
   const isMouseOver = useRef(false);
   const viewportRef = useRef({
@@ -44,7 +52,7 @@ const P5Canvas = ({ computedData }) => {
     }
 
     // Draw points
-    if (canvas.points && canvas.points.length > 0) {
+    if (showPoints && canvas.points && canvas.points.length > 0) {
       p5.push();
       p5.noStroke();
       p5.fill(255);
@@ -162,7 +170,7 @@ const P5Canvas = ({ computedData }) => {
     p5.pop();
 
     // Handle panning
-    if (isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
+    if (mode === 'pan' && isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
       if (!isPanning.current) {
         isPanning.current = true;
         prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
@@ -222,6 +230,11 @@ const P5Canvas = ({ computedData }) => {
     }
   };
 
+  const handleLiveUpdateToggle = () => {
+    setLiveUpdate(!liveUpdate);
+    onLiveUpdateToggle(!liveUpdate);
+  };
+
   useEffect(() => {
     if (!containerRef.current) return;
 
@@ -242,19 +255,53 @@ const P5Canvas = ({ computedData }) => {
   }, []);
 
   return (
-    <div 
-      ref={containerRef} 
-      className="w-full h-full"
-      onMouseEnter={mouseEntered}
-      onMouseLeave={mouseLeft}
-    >
-      <Sketch
-        setup={setup}
-        draw={draw}
-        mouseWheel={mouseWheel}
-        keyPressed={keyPressed}
-        keyReleased={keyReleased}
-      />
+    <div className="relative w-full h-full flex">
+      {/* Left toolbar */}
+      <div className="absolute left-4 top-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-2 flex flex-col gap-2">
+        <ToolbarButton
+          icon={<BsCursor size={20} />}
+          active={mode === 'select'}
+          onClick={() => setMode('select')}
+          title="Selection Mode (V)"
+        />
+        <ToolbarButton
+          icon={<BiMove size={20} />}
+          active={mode === 'pan'}
+          onClick={() => setMode('pan')}
+          title="Pan/Zoom Mode (H)"
+        />
+      </div>
+
+      {/* Right toolbar */}
+      <div className="absolute right-4 top-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-2 flex flex-col gap-2">
+        <ToolbarButton
+          icon={<TbRefresh size={20} />}
+          active={liveUpdate}
+          onClick={handleLiveUpdateToggle}
+          title="Toggle Live Updates"
+        />
+        <ToolbarButton
+          icon={<BsCircle size={20} />}
+          active={showPoints}
+          onClick={() => setShowPoints(!showPoints)}
+          title="Toggle Points Visibility"
+        />
+      </div>
+
+      <div 
+        ref={containerRef} 
+        className="w-full h-full"
+        onMouseEnter={mouseEntered}
+        onMouseLeave={mouseLeft}
+      >
+        <Sketch
+          setup={setup}
+          draw={draw}
+          mouseWheel={mouseWheel}
+          keyPressed={keyPressed}
+          keyReleased={keyReleased}
+        />
+      </div>
     </div>
   );
 };
