@@ -1,5 +1,5 @@
 class Canvas {
-    constructor(width, height, backgroundColor) {
+    constructor(width, height, backgroundColor = '#ffffff') {
         this.size = { x: width, y: height };
         this.backgroundColor = backgroundColor;
         this.points = [];
@@ -304,6 +304,28 @@ class Canvas {
         for (const line of this.lines) {
             yield line;
         }
+    }
+
+    line(x1, y1, x2, y2, color = '#000000', thickness = 1) {
+        // Add points if they don't exist
+        let startPointIndex = this.points.findIndex(p => p.x === x1 && p.y === y1);
+        if (startPointIndex === -1) {
+            startPointIndex = this.points.length;
+            this.points.push({ x: x1, y: y1 });
+        }
+
+        let endPointIndex = this.points.findIndex(p => p.x === x2 && p.y === y2);
+        if (endPointIndex === -1) {
+            endPointIndex = this.points.length;
+            this.points.push({ x: x2, y: y2 });
+        }
+
+        // Add the line
+        this.lines.push({
+            points: [startPointIndex, endPointIndex],
+            color: color,
+            thickness: thickness
+        });
     }
 }
 

@@ -36,6 +36,26 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
     canvas.style('cursor', 'grab');
   };
 
+  const parseColor = (p5, color) => {
+    try {
+      if (!color) return p5.color(0);  // Default to black
+      if (typeof color === 'string') {
+        return p5.color(color);
+      }
+      if (typeof color === 'number') {
+        return p5.color(color);
+      }
+      // Handle RGB object format
+      if (color.r !== undefined && color.g !== undefined && color.b !== undefined) {
+        return p5.color(color.r, color.g, color.b);
+      }
+      return p5.color(0);  // Fallback to black
+    } catch (e) {
+      console.warn('Invalid color:', color);
+      return p5.color(0);
+    }
+  };
+
   const drawCanvas = (p5, viewport, topLeft, bottomRight) => {
     if (!computedData?.result?.result) return;
     const canvas = computedData.result.result;
@@ -43,7 +63,7 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
     // Set background color if provided
     if (canvas.backgroundColor) {
       p5.push();
-      p5.fill(canvas.backgroundColor);
+      p5.fill(parseColor(p5, canvas.backgroundColor));
       p5.stroke(100);
       p5.strokeWeight(1 / viewport.zoom);
       // Draw rectangle representing the canvas
@@ -66,20 +86,17 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
     // Draw lines
     if (canvas.lines && canvas.lines.length > 0) {
       p5.push();
-      p5.strokeWeight(2 / viewport.zoom);
-      p5.stroke(0);
       p5.noFill();
 
       canvas.lines.forEach(line => {
         if (line.points.length > 1) {
-          p5.beginShape();
-          line.points.forEach(pointId => {
-            const point = canvas.points[pointId];
-            if (point) {
-              p5.vertex(point.x, point.y);
-            }
-          });
-          p5.endShape();
+          p5.stroke(parseColor(p5, line.color));
+          p5.strokeWeight((line.thickness || 2) / viewport.zoom);
+          const startPoint = canvas.points[line.points[0]];
+          const endPoint = canvas.points[line.points[1]];
+          if (startPoint && endPoint) {
+            p5.line(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+          }
         }
       });
       p5.pop();
