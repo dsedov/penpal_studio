@@ -9,6 +9,8 @@ import P5Canvas from './components/P5Canvas';
 import AttributeEditor from './components/AttributeEditor';
 import { useNodesState, useEdgesState } from 'reactflow';
 import { computeGraph } from './lib/nodeComputation';
+import { saveProjectToFile, loadProjectFromFile } from './lib/fileOperations';
+import { defaultNodeData } from './components/nodes/nodeTypes';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -17,6 +19,10 @@ function App() {
   const [outputNodeId, setOutputNodeId] = useState(null);
   const [computationResults, setComputationResults] = useState(null);
   const [isPanning, setIsPanning] = useState(false);
+  const [canvasViewport, setCanvasViewport] = useState({ x: 0, y: 0, zoom: 1 });
+  const [canvasMode, setCanvasMode] = useState('pan');
+  const [showPoints, setShowPoints] = useState(true);
+  const [liveUpdate, setLiveUpdate] = useState(true);
 
   // Handle computation results
   const handleComputeResults = useCallback((results) => {
@@ -78,14 +84,90 @@ function App() {
     // ... panning logic ...
   };
 
+  const handleSaveProject = async () => {
+    const success = await saveProjectToFile({
+      nodes,
+      edges,
+      canvasViewport,
+      canvasSettings: {
+        mode: canvasMode,
+        showPoints,
+        liveUpdate
+      }
+    });
+    if (success) {
+      console.log('Project saved successfully');
+    }
+  };
+
+  const handleLoadProject = async () => {
+    const projectData = await loadProjectFromFile();
+    if (projectData) {
+      // Reconstruct nodes with their functions
+      const reconstructedNodes = projectData.nodes.map(node => {
+        const nodeType = node.type;
+        const defaultData = defaultNodeData[nodeType];
+        
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            ...defaultData,
+            properties: node.data.properties,
+            compute: defaultData.compute,
+            onToggleBypass: (id) => handleBypassToggle(id),
+            onToggleOutput: (id) => handleOutputToggle(id),
+            isOutput: node.data.isOutput,
+            bypass: node.data.bypass
+          }
+        };
+      });
+
+      setNodes(reconstructedNodes);
+      setEdges(projectData.edges);
+      setCanvasViewport(projectData.viewport);
+      setCanvasMode(projectData.canvasSettings.mode);
+      setShowPoints(projectData.canvasSettings.showPoints);
+      setLiveUpdate(projectData.canvasSettings.liveUpdate);
+    }
+  };
+
+  const handleBypassToggle = useCallback((nodeId) => {
+    setNodes(nds =>
+      nds.map(node => {
+        if (node.id === nodeId) {
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              bypass: !node.data.bypass
+            }
+          };
+        }
+        return node;
+      })
+    );
+  }, []);
+
   return (
     <div className="h-screen w-screen flex flex-col dark">
-      <MenuBar />
+      <MenuBar 
+        onSave={handleSaveProject}
+        onLoad={handleLoadProject}
+      />
       <div className="flex-1" style={{ height: 'calc(100vh - 48px)' }}>
         <Allotment>
           <Allotment.Pane minSize={200}>
             <P5Canvas 
-              computedData={outputNodeId ? computationResults?.get(outputNodeId) : null} 
+              computedData={outputNodeId ? computationResults?.get(outputNodeId) : null}
+              viewport={canvasViewport}
+              onViewportChange={setCanvasViewport}
+              mode={canvasMode}
+              onModeChange={setCanvasMode}
+              showPoints={showPoints}
+              onShowPointsChange={setShowPoints}
+              liveUpdate={liveUpdate}
+              onLiveUpdateToggle={setLiveUpdate}
             />
           </Allotment.Pane>
           <Allotment.Pane minSize={200}>

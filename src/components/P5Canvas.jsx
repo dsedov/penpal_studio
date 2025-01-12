@@ -6,20 +6,27 @@ import { BsCursor } from 'react-icons/bs';
 import { TbRefresh } from 'react-icons/tb';
 import { BsCircle } from 'react-icons/bs';
 
-const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
-  const [mode, setMode] = useState('pan'); // 'pan' or 'select'
-  const [liveUpdate, setLiveUpdate] = useState(true);
-  const [showPoints, setShowPoints] = useState(true);
+const P5Canvas = ({ 
+  computedData, 
+  viewport = { x: 0, y: 0, zoom: 1 },
+  onViewportChange = () => {},
+  mode = 'pan',
+  onModeChange = () => {},
+  showPoints = true,
+  onShowPointsChange = () => {},
+  liveUpdate = true,
+  onLiveUpdateToggle = () => {} 
+}) => {
   const containerRef = useRef(null);
+  const viewportRef = useRef(viewport);
   const isMouseOver = useRef(false);
-  const viewportRef = useRef({
-    x: 0,
-    y: 0,
-    zoom: 1
-  });
   const p5Ref = useRef(null);
   const prevMouseRef = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
+
+  useEffect(() => {
+    viewportRef.current = viewport;
+  }, [viewport]);
 
   const setup = (p5, canvasParentRef) => {
     if (!containerRef.current) return;
@@ -198,6 +205,7 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
         viewport.x += dx;
         viewport.y += dy;
         prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
+        onViewportChange({ ...viewport });
       }
     } else {
       isPanning.current = false;
@@ -206,11 +214,8 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
   };
 
   const mouseWheel = (p5, event) => {
-    // Only handle wheel events if the mouse is over the canvas
     if (!isMouseOver.current) return;
-
     event.preventDefault();
-    const viewport = viewportRef.current;
     
     const mx = p5.mouseX - p5.width / 2;
     const my = p5.mouseY - p5.height / 2;
@@ -226,6 +231,7 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
     const dy = my / viewport.zoom - my / oldZoom;
     viewport.x += dx;
     viewport.y += dy;
+    onViewportChange({ ...viewport });
   };
 
   const keyPressed = (p5) => {
@@ -278,13 +284,13 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
         <ToolbarButton
           icon={<BsCursor size={20} />}
           active={mode === 'select'}
-          onClick={() => setMode('select')}
+          onClick={() => onModeChange('select')}
           title="Selection Mode (V)"
         />
         <ToolbarButton
           icon={<BiMove size={20} />}
           active={mode === 'pan'}
-          onClick={() => setMode('pan')}
+          onClick={() => onModeChange('pan')}
           title="Pan/Zoom Mode (H)"
         />
       </div>
@@ -294,13 +300,13 @@ const P5Canvas = ({ computedData, onLiveUpdateToggle = () => {} }) => {
         <ToolbarButton
           icon={<TbRefresh size={20} />}
           active={liveUpdate}
-          onClick={handleLiveUpdateToggle}
+          onClick={() => onLiveUpdateToggle(!liveUpdate)}
           title="Toggle Live Updates"
         />
         <ToolbarButton
           icon={<BsCircle size={20} />}
           active={showPoints}
-          onClick={() => setShowPoints(!showPoints)}
+          onClick={() => onShowPointsChange(!showPoints)}
           title="Toggle Points Visibility"
         />
       </div>

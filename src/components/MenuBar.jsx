@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { invoke } from "@tauri-apps/api/core";
 
-const MenuBar = () => {
+const MenuBar = ({ onSave, onLoad }) => {
   const [isFileOpen, setIsFileOpen] = React.useState(false);
   const [isEditOpen, setIsEditOpen] = React.useState(false);
 
@@ -55,6 +55,7 @@ const MenuBar = () => {
             <button 
               className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
+                onLoad();
                 setIsFileOpen(false);
               }}
             >
@@ -63,6 +64,7 @@ const MenuBar = () => {
             <button 
               className="block w-full px-4 py-1 text-sm text-left hover:bg-gray-100"
               onClick={() => {
+                onSave();
                 setIsFileOpen(false);
               }}
             >
