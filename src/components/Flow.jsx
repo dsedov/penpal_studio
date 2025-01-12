@@ -28,7 +28,7 @@ const Flow = ({
 }) => {
   const reactFlowWrapper = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
-  const { screenToFlowPosition } = useReactFlow();
+  const { screenToFlowPosition, fitView } = useReactFlow();
 
   // Define computeGraphOnce first
   const computeGraphOnce = useCallback(async (force = false) => {
@@ -197,7 +197,12 @@ const Flow = ({
         data: {
           label: `Connection ${params.source} → ${params.target}`
         },
-        style: { stroke: '#999', strokeWidth: 2 }
+        style: { 
+          stroke: '#999', 
+          strokeWidth: 2,
+          transition: 'stroke-width 0.2s'
+        },
+        className: 'react-flow__edge-path'
       };
       
       // For merge nodes, allow multiple connections
@@ -358,6 +363,12 @@ const Flow = ({
           data: {
             ...edge.data,
             isMultiSelected: false
+          },
+          // Add these style properties for visual feedback
+          style: {
+            ...edge.style,
+            strokeWidth: edge.id === clickedEdge.id ? 4 : 2,
+            stroke: edge.id === clickedEdge.id ? '#ff0072' : '#999'
           }
         }))
       );
@@ -389,6 +400,12 @@ const Flow = ({
             data: {
               ...edge.data,
               isMultiSelected: edge.id !== clickedEdge.id && edge.selected && currentSelected.length > 2
+            },
+            // Add style for multi-select
+            style: {
+              ...edge.style,
+              strokeWidth: (edge.id !== clickedEdge.id && edge.selected) ? 4 : 2,
+              stroke: (edge.id !== clickedEdge.id && edge.selected) ? '#ff0072' : '#999'
             }
           }));
         } else {
@@ -398,6 +415,12 @@ const Flow = ({
             data: {
               ...edge.data,
               isMultiSelected: (edge.id === clickedEdge.id || edge.selected) && (currentSelected.length > 0)
+            },
+            // Add style for multi-select
+            style: {
+              ...edge.style,
+              strokeWidth: (edge.id === clickedEdge.id || edge.selected) ? 4 : 2,
+              stroke: (edge.id === clickedEdge.id || edge.selected) ? '#ff0072' : '#999'
             }
           }));
         }
@@ -452,17 +475,35 @@ const Flow = ({
       }))
     );
 
+    // Clear edge selections
+    setEdges(eds =>
+      eds.map(edge => ({
+        ...edge,
+        selected: false,
+        data: {
+          ...edge.data,
+          isMultiSelected: false
+        },
+        style: {
+          ...edge.style,
+          strokeWidth: 2,
+          stroke: '#999'
+        }
+      }))
+    );
+
     // Close context menu if it's open
     if (contextMenu?.show) {
       setContextMenu(null);
     }
-  }, [onNodeSelect, setNodes, contextMenu, setContextMenu]);
+  }, [onNodeSelect, setNodes, setEdges, contextMenu, setContextMenu]);
 
   // Add safety check for nodes and edges
   if (!nodes || !edges) {
     return null;
   }
 
+  
   return (
     <div 
       className="reactflow-wrapper bg-gray-100" 
@@ -480,14 +521,16 @@ const Flow = ({
         onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
         onNodeClick={onNodeClick}
+        onEdgeClick={onEdgeClick}
         onConnect={onConnect}
         onNodeContextMenu={onContextMenu}
         onPaneContextMenu={onContextMenu}
-        fitView
         onPaneClick={handlePaneClick}
-        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
         minZoom={0.1}
         maxZoom={4}
+        edgesFocusable={true}
+        selectNodesOnDrag={false}
       >
         <Background />
         <Controls />
