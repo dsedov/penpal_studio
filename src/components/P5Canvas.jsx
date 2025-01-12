@@ -344,8 +344,8 @@ const P5Canvas = ({
 
     p5.pop();
 
-    // Handle panning
-    if (mode === 'pan' && isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
+    // Handle panning - add editMode check
+    if (mode === 'pan' && !editMode && isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
       if (!isPanning.current) {
         isPanning.current = true;
         prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
