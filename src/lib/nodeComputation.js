@@ -78,9 +78,8 @@ export const computeGraph = async (nodes, edges) => {
       if (node.data.bypass) {
         const inputEdges = edges.filter(edge => edge.target === nodeId);
         if (inputEdges.length > 0) {
-          // Get the first input's result
           const firstInputResult = await computeNodeOutput(inputEdges[0].source);
-          return firstInputResult; // Pass through the input result directly
+          return firstInputResult;
         }
         return { result: null, error: null };
       }
@@ -93,8 +92,6 @@ export const computeGraph = async (nodes, edges) => {
       for (const edge of inputEdges) {
         const sourceResult = await computeNodeOutput(edge.source);
         if (sourceResult?.error) {
-          // If input has error, propagate it
-          console.log(`Error propagated from input ${edge.source}:`, sourceResult.error);
           return { error: `Input error: ${sourceResult.error}` };
         }
         if (edge.targetHandle) {

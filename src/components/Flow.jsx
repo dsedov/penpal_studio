@@ -24,26 +24,30 @@ const Flow = ({
   onComputeResults,
   computationResults,
   outputNodeId,
+  liveUpdate = true,
 }) => {
   const reactFlowWrapper = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
   const { screenToFlowPosition } = useReactFlow();
 
   // Define computeGraphOnce first
-  const computeGraphOnce = useCallback(async () => {
+  const computeGraphOnce = useCallback(async (force = false) => {
+    if (!liveUpdate && !force) return; // Skip computation if not live updating
     const result = await computeGraph(nodes, edges);
     onComputeResults(result);
-  }, [nodes, edges, onComputeResults]);
+  }, [nodes, edges, onComputeResults, liveUpdate]);
 
   // Add computation effect with proper dependencies
   useEffect(() => {
-    computeGraphOnce();
-  }, [computeGraphOnce]);
+    if (liveUpdate) {
+      computeGraphOnce();
+    }
+  }, [nodes, edges, liveUpdate]);
 
   const handleEdgesChange = useCallback((changes) => {
     onEdgesChange(changes);
-    // Force recomputation on next tick for edge deletions/changes
-    setTimeout(() => computeGraphOnce(), 0);
+    // Force recomputation on edge changes regardless of live update setting
+    setTimeout(() => computeGraphOnce(true), 0);
   }, [onEdgesChange, computeGraphOnce]);
 
   const onNodeClick = useCallback((event, clickedNode) => {
@@ -214,7 +218,8 @@ const Flow = ({
 
       return [...filteredEdges, newEdge];
     });
-    setTimeout(() => computeGraphOnce(), 0);
+    // Force recomputation on new connections
+    setTimeout(() => computeGraphOnce(true), 0);
   }, [setEdges, nodes, computeGraphOnce]);
 
   // Validate connection while dragging
@@ -234,15 +239,13 @@ const Flow = ({
         },
       }))
     );
-    // Add this to trigger recomputation after bypass toggle
-    setTimeout(() => computeGraphOnce(), 0);
+    // Force recomputation when bypass is toggled
+    setTimeout(() => computeGraphOnce(true), 0);
   }, [setNodes, computeGraphOnce]);
 
   const handleToggleOutput = useCallback((nodeId) => {
-    // First call the parent's output toggle handler
     onOutputToggle(nodeId);
     
-    // Then update the nodes directly here
     setNodes(nds => {
       const updatedNodes = nds.map(node => ({
         ...node,
@@ -252,9 +255,9 @@ const Flow = ({
         }
       }));
       
-      // Schedule computation after both state updates
+      // Force computation when output node changes
       Promise.resolve().then(() => {
-        computeGraphOnce();
+        computeGraphOnce(true);
       });
       
       return updatedNodes;
@@ -304,8 +307,8 @@ const Flow = ({
     setNodes(nds => [...nds, newNode]);
     setContextMenu(null);
     
-    // Schedule computation after node creation
-    setTimeout(() => computeGraphOnce(), 0);
+    // Force computation when new node is created
+    setTimeout(() => computeGraphOnce(true), 0);
   }, [nodes, contextMenu, setNodes, handleToggleBypass, handleToggleOutput, computeGraphOnce]);
 
   useEffect(() => {
@@ -339,8 +342,8 @@ const Flow = ({
       onNodeSelect(null);
     }
 
-    // Trigger recomputation after deletion
-    setTimeout(() => computeGraphOnce(), 0);
+    // Force recomputation after deletion
+    setTimeout(() => computeGraphOnce(true), 0);
   }, [setEdges, setNodes, nodes, edges, onNodeSelect, computeGraphOnce]);
 
   const onEdgeClick = useCallback((event, clickedEdge) => {

@@ -253,11 +253,6 @@ const P5Canvas = ({
     }
   };
 
-  const handleLiveUpdateToggle = () => {
-    setLiveUpdate(!liveUpdate);
-    onLiveUpdateToggle(!liveUpdate);
-  };
-
   useEffect(() => {
     if (!containerRef.current) return;
 

@@ -44,7 +44,7 @@ function App() {
     setOutputNodeId(nodeId);
   }, [outputNodeId]);
 
-  const handlePropertyChange = (nodeId, propertyName, value) => {
+  const handlePropertyChange = useCallback((nodeId, propertyName, value) => {
     setNodes(nds =>
       nds.map(node => {
         if (node.id === nodeId) {
@@ -65,7 +65,7 @@ function App() {
         return node;
       })
     );
-  };
+  }, []);
 
   const selectedNode = selectedNodeId
     ? nodes.find((node) => node.id === selectedNodeId)
@@ -244,6 +244,7 @@ function App() {
                       onComputeResults={handleComputeResults}
                       computationResults={computationResults}
                       outputNodeId={outputNodeId}
+                      liveUpdate={liveUpdate}
                     />
                   </ReactFlowProvider>
                 </div>
