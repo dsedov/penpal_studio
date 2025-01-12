@@ -5,6 +5,7 @@ import MergeNode, { defaultData as mergeDefaultData } from './MergeNode';
 import LineNode, { defaultData as lineDefaultData } from './LineNode';
 import ConnectNearbyNode, { defaultData as connectNearbyDefaultData } from './ConnectNearbyNode';
 import CropNode, { defaultData as cropDefaultData } from './CropNode';
+import CleanupNode, { defaultData as cleanupDefaultData } from './CleanupNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -14,6 +15,7 @@ export const nodeTypes = {
   line: LineNode,
   connectNearby: ConnectNearbyNode,
   crop: CropNode,
+  cleanup: CleanupNode,
 };
 
 export const defaultNodeData = {
@@ -24,4 +26,5 @@ export const defaultNodeData = {
   line: lineDefaultData,
   connectNearby: connectNearbyDefaultData,
   crop: cropDefaultData,
+  cleanup: cleanupDefaultData,
 }; 

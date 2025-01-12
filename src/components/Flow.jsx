@@ -1,11 +1,11 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import ReactFlow, {
   Background,
   Controls,
   MiniMap,
   useNodesState,
   useEdgesState,
-  useReactFlow,
+  useReactFlow
 } from 'reactflow';
 import { nodeTypes, defaultNodeData } from './nodes/nodeTypes';
 import ContextMenu from './ContextMenu';
@@ -23,10 +23,11 @@ const Flow = ({
   setEdges,
   onComputeResults,
   computationResults,
+  outputNodeId,
 }) => {
   const reactFlowWrapper = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
-  const { project } = useReactFlow();
+  const { screenToFlowPosition } = useReactFlow();
 
   // Define computeGraphOnce first
   const computeGraphOnce = useCallback(async () => {
@@ -106,6 +107,20 @@ const Flow = ({
   }, [setNodes, nodes, onNodeSelect]);
   
   const onSelectionChange = useCallback(({ nodes: selectedNodes }) => {
+    // If no nodes are selected or selectedNodes is undefined, clear all selections
+    if (!selectedNodes || selectedNodes.length === 0) {
+      setNodes((nds) => nds.map((node) => ({
+        ...node,
+        selected: false,
+        data: {
+          ...node.data,
+          isMultiSelected: false
+        }
+      })));
+      onNodeSelect(null);
+      return;
+    }
+
     setNodes((nds) => {
       const selectedIds = selectedNodes.map(node => node.id);
       const hasShift = window.event?.shiftKey;
@@ -139,7 +154,7 @@ const Flow = ({
         }));
       }
     });
-  }, [setNodes]);
+  }, [setNodes, onNodeSelect]);
   
   const handlePropertyChange = useCallback((nodeId, propertyName, value) => {
     setNodes((nds) =>
@@ -246,22 +261,18 @@ const Flow = ({
 
   const onContextMenu = useCallback((event) => {
     event.preventDefault();
-    const reactFlowBounds = reactFlowWrapper.current.getBoundingClientRect();
     const mousePosition = {
-      x: event.clientX - reactFlowBounds.left,
-      y: event.clientY - reactFlowBounds.top,
+      x: event.clientX,
+      y: event.clientY,
     };
-    const flowPosition = project({
-      x: mousePosition.x,
-      y: mousePosition.y,
-    });
+    const flowPosition = screenToFlowPosition(mousePosition);
     setContextMenu({
       mouseX: event.clientX,
       mouseY: event.clientY,
       flowPosition,
       show: true
     });
-  }, [project]);
+  }, [screenToFlowPosition]);
 
   const generateUniqueId = (prefix, items) => {
     // Find the highest existing ID and add 1
@@ -405,6 +416,48 @@ const Flow = ({
     }
   }, [setEdges, setNodes, nodes, onNodeSelect]);
 
+  // Update nodes with outputNodeId
+  const nodesWithOutputId = useMemo(() => {
+    if (!nodes) return [];
+    return nodes.map(node => ({
+      ...node,
+      data: {
+        ...node.data,
+        outputNodeId,
+      }
+    }));
+  }, [nodes, outputNodeId]);
+
+  const handlePaneClick = useCallback((event) => {
+    // Prevent event bubbling
+    event.stopPropagation();
+    
+    // Clear node selection
+    onNodeSelect(null);
+    
+    // Clear node selections in a single update
+    setNodes(nds => 
+      nds.map(node => ({
+        ...node,
+        selected: false,
+        data: {
+          ...node.data,
+          isMultiSelected: false
+        }
+      }))
+    );
+
+    // Close context menu if it's open
+    if (contextMenu?.show) {
+      setContextMenu(null);
+    }
+  }, [onNodeSelect, setNodes, contextMenu, setContextMenu]);
+
+  // Add safety check for nodes and edges
+  if (!nodes || !edges) {
+    return null;
+  }
+
   return (
     <div 
       className="reactflow-wrapper bg-gray-100" 
@@ -416,61 +469,20 @@ const Flow = ({
       }}
     >
       <ReactFlow
-        nodes={nodes.map(node => ({
-          ...node,
-          data: {
-            ...node.data,
-            hasError: computationResults?.get(node.id)?.error != null
-          }
-        }))}
-        edges={edges.map(edge => ({
-          ...edge,
-          type: 'default',
-          style: {
-            stroke: edge.selected ? '#666' : '#999',
-            strokeWidth: edge.selected ? 3 : 2,
-            cursor: 'pointer'
-          }
-        }))}
-        onEdgesChange={handleEdgesChange}
-        onNodesDelete={handleNodesDelete}
-        onConnect={onConnect}
-        onConnectStart={onConnectStart}
-        onConnectEnd={onConnectEnd}
-        onContextMenu={onContextMenu}
-        onNodeClick={onNodeClick}
-        onEdgeClick={onEdgeClick}
+        nodes={nodesWithOutputId || []}
+        edges={edges || []}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         nodeTypes={nodeTypes}
-        defaultViewport={{ x: 0, y: 0, zoom: 1.0 }}
-        className="reactflow-container"
-        panOnDrag={[0]}
-        panOnScroll={false}
-        zoomOnScroll={true}
-        preventScrolling={true}
-        snapToGrid={true}
-        snapGrid={[20, 20]}
-        connectionMode="loose"
-        selectNodesOnDrag={true}
-        multiSelectionKeyCode="Shift"
-        selectionKeyCode="Shift"
-        onNodesChange={(changes) => {
-          const nonRemoveChanges = changes.filter(change => change.type !== 'remove');
-          if (nonRemoveChanges.length > 0) {
-            onNodesChange(nonRemoveChanges);
-          }
-        }}
-        edgesUpdatable={true}
-        edgesFocusable={true}
-        elementsSelectable={true}
-        deleteKeyCode={['Backspace', 'Delete']}
-        onInit={() => {
-          // Prevent default delete behavior
-          document.addEventListener('keydown', (e) => {
-            if (e.key === 'Delete') {
-              e.preventDefault();
-            }
-          });
-        }}
+        onNodeClick={onNodeClick}
+        onConnect={onConnect}
+        onNodeContextMenu={onContextMenu}
+        onPaneContextMenu={onContextMenu}
+        fitView
+        onPaneClick={handlePaneClick}
+        defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+        minZoom={0.1}
+        maxZoom={4}
       >
         <Background />
         <Controls />

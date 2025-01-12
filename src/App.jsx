@@ -243,6 +243,7 @@ function App() {
                       setEdges={setEdges}
                       onComputeResults={handleComputeResults}
                       computationResults={computationResults}
+                      outputNodeId={outputNodeId}
                     />
                   </ReactFlowProvider>
                 </div>
