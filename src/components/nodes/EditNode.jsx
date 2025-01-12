@@ -73,59 +73,6 @@ const EditNode = (props) => {
       outputs={[
         { id: 'output', label: 'Output' }
       ]}
-      renderOutput={(computedData) => (
-        <P5Canvas
-          computedData={computedData}
-          showEditButton={true}
-          onPointMove={(pointIndex, modification) => {
-            if (!props.data.onPropertyChange) return;
-            const modifications = new Map(props.data.properties.modifications.value);
-            modifications.set(pointIndex, modification);
-            props.data.onPropertyChange(props.id, 'modifications', modifications);
-          }}
-          onLineEdit={(points) => {
-            if (!props.data.onPropertyChange) return;
-            const lineEdits = {...props.data.properties.lineEdits.value};
-            
-            // If we received an array of points, create a new line
-            if (Array.isArray(points) && points.length >= 2) {
-              // Create a new line with the points
-              canvas.lines.push({
-                points: points,
-                color: '#000000',
-                thickness: 2
-              });
-              // Clear the current line
-              lineEdits.currentLine = [];
-            } else {
-              // Single point selection logic
-              const pointIndex = points;
-              if (!lineEdits.selectedLine) {
-                lineEdits.currentLine = [pointIndex];
-              } else {
-                const currentLine = [...lineEdits.currentLine];
-                const pointIdx = currentLine.indexOf(pointIndex);
-                
-                if (pointIdx === -1) {
-                  currentLine.push(pointIndex);
-                } else {
-                  currentLine.splice(pointIdx, 1);
-                }
-                lineEdits.currentLine = currentLine;
-              }
-            }
-            
-            props.data.onPropertyChange(props.id, 'lineEdits', {...lineEdits});
-          }}
-          selectedLine={props.data.properties.lineEdits?.value?.selectedLine}
-          onLineSelect={(lineIndex) => {
-            if (!props.data.onPropertyChange) return;
-            const lineEdits = {...props.data.properties.lineEdits.value};
-            lineEdits.selectedLine = lineIndex;
-            props.data.onPropertyChange(props.id, 'lineEdits', {...lineEdits});
-          }}
-        />
-      )}
     />
   );
 };
