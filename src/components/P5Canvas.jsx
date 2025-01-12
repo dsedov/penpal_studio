@@ -235,18 +235,26 @@ const P5Canvas = ({
   };
 
   const keyPressed = (p5) => {
+    // Only process keyboard events if mouse is over the canvas
+    if (!isMouseOver.current) return;
+    
     if (p5.key === 'h' || p5.key === 'H') {
       viewportRef.current = {
         x: 0,
         y: 0,
         zoom: 1
       };
+      // Update the viewport state
+      onViewportChange(viewportRef.current);
     } else if (p5.key === ' ') {
       isSpacePressed.current = true;
     }
   };
 
   const keyReleased = (p5) => {
+    // Only process keyboard events if mouse is over the canvas
+    if (!isMouseOver.current) return;
+    
     if (p5.key === ' ') {
       isSpacePressed.current = false;
       isPanning.current = false;
