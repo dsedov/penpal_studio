@@ -6,6 +6,7 @@ import { ColorInput } from './inputs/ColorInput';
 import { StringInput } from './inputs/StringInput';
 import { CodeInput } from './inputs/CodeInput';
 import { MenuInput } from './inputs/MenuInput';
+import { ModificationsInput } from './inputs/ModificationsInput';
 import { save } from '@tauri-apps/plugin-dialog';
 
 const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
@@ -52,6 +53,8 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
         return <ColorInput {...commonProps} />;
       case 'string':
         return <StringInput {...commonProps} />;
+      case 'modifications':
+        return <ModificationsInput {...commonProps} />;
       case 'code':
         return (
           <CodeInput

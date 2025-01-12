@@ -10,7 +10,7 @@ import TransformNode, { defaultData as transformDefaultData } from './TransformN
 import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePropertyChange } from './CodeNode';
 import SoftTransformNode, { defaultData as softTransformDefaultData } from './SoftTransformNode';
 import EditNode, { defaultData as editDefaultData } from './EditNode';
-import ModificationsInput from '../inputs/ModificationsInput';
+import { ModificationsInput } from '../inputs/ModificationsInput';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -24,7 +24,7 @@ export const nodeTypes = {
   transform: TransformNode,
   code: CodeNode,
   softTransform: SoftTransformNode,
-  edit: EditNode,
+  edit: EditNode
 };
 
 export const defaultNodeData = {
@@ -39,7 +39,7 @@ export const defaultNodeData = {
   transform: transformDefaultData,
   code: codeDefaultData,
   softTransform: softTransformDefaultData,
-  edit: editDefaultData,
+  edit: editDefaultData
 };
 
 export const propertyChangeHandlers = {
@@ -47,5 +47,5 @@ export const propertyChangeHandlers = {
 };
 
 export const customInputTypes = {
-  modifications: ModificationsInput,
+  modifications: ModificationsInput
 }; 

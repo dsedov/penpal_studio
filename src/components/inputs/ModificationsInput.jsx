@@ -1,6 +1,6 @@
 import React from 'react';
 
-const ModificationsInput = ({ value, label }) => {
+export const ModificationsInput = ({ value, label }) => {
   const modifications = Array.from(value.entries());
 
   return (
@@ -26,5 +26,3 @@ const ModificationsInput = ({ value, label }) => {
     </div>
   );
 };
-
-export default ModificationsInput; 
