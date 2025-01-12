@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-export const CodeInput = ({ label, value, onChange, language }) => {
+export const CodeInput = ({ value, onChange, label }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -28,7 +28,6 @@ export const CodeInput = ({ label, value, onChange, language }) => {
           overflowX: 'auto'
         }}
       />
-      <div className="mt-1 text-xs text-gray-500">Language: {language}</div>
     </div>
   );
 };

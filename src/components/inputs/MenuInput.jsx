@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const MenuInput = ({ label, value, onChange, options }) => {
+export const MenuInput = ({ value, options, onChange, label }) => {
   return (
     <div className="flex flex-col gap-1">
       <label className="text-sm text-gray-300">{label}</label>

@@ -24,15 +24,21 @@ function App() {
   const [canvasMode, setCanvasMode] = useState('pan');
   const [showPoints, setShowPoints] = useState(true);
   const [liveUpdate, setLiveUpdate] = useState(true);
+  const [editMode, setEditMode] = useState(false);
 
   // Handle computation results
   const handleComputeResults = useCallback((results) => {
     setComputationResults(results);
   }, []);
 
-  const handleNodeSelect = (node) => {
+  const handleNodeSelect = useCallback((node) => {
     setSelectedNodeId(node ? node.id : null);
-  };
+    // Clear edit mode if we're not selecting an Edit node
+    if (!node || node.type !== 'edit') {
+      setEditMode(false);
+      setCanvasMode('pan');
+    }
+  }, []);
 
   const handleOutputToggle = useCallback((nodeId) => {
     // If clicking the current output node, turn it off
@@ -199,6 +205,58 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleDuplicateNode]);
 
+  // Add handler for point movement
+  const handlePointMove = useCallback((pointIndex, modification) => {
+    console.log('Moving point:', pointIndex, modification);
+    if (!selectedNodeId) return;
+
+    setNodes(nodes => nodes.map(node => {
+      if (node.id !== selectedNodeId) return node;
+
+      // Create a new Map if it doesn't exist
+      const currentMods = node.data.properties.modifications.value || new Map();
+      const newMods = new Map(currentMods);
+      newMods.set(pointIndex, modification);
+
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          properties: {
+            ...node.data.properties,
+            modifications: {
+              ...node.data.properties.modifications,
+              value: newMods
+            }
+          }
+        }
+      };
+    }));
+  }, [selectedNodeId]);
+
+  // Update canvas mode handler
+  const handleCanvasModeChange = useCallback((mode) => {
+    if (mode === 'edit') {
+      // Only allow edit mode if an Edit node is selected
+      const selectedNode = nodes.find(n => n.id === selectedNodeId);
+      if (selectedNode?.type === 'edit') {
+        // Check if the node has any input connections
+        const hasInput = edges.some(edge => edge.target === selectedNodeId);
+        if (!hasInput) {
+          // If no input, stay in pan mode
+          setCanvasMode('pan');
+          return;
+        }
+        setEditMode(true);
+      } else {
+        setCanvasMode('pan');
+      }
+    } else {
+      setCanvasMode(mode);
+      setEditMode(false);
+    }
+  }, [selectedNodeId, nodes, edges]);
+
   return (
     <div className="h-screen w-screen flex flex-col dark">
       <MenuBar 
@@ -213,11 +271,15 @@ function App() {
               viewport={canvasViewport}
               onViewportChange={setCanvasViewport}
               mode={canvasMode}
-              onModeChange={setCanvasMode}
+              onModeChange={handleCanvasModeChange}
               showPoints={showPoints}
               onShowPointsChange={setShowPoints}
               liveUpdate={liveUpdate}
               onLiveUpdateToggle={setLiveUpdate}
+              editMode={editMode}
+              onPointMove={handlePointMove}
+              selectedNodeId={selectedNodeId}
+              showEditButton={selectedNode?.type === 'edit'}
             />
           </Allotment.Pane>
           <Allotment.Pane minSize={200}>

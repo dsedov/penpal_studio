@@ -5,6 +5,7 @@ import { BiMove } from 'react-icons/bi';
 import { BsCursor } from 'react-icons/bs';
 import { TbRefresh } from 'react-icons/tb';
 import { BsCircle } from 'react-icons/bs';
+import { BsPencil } from 'react-icons/bs';
 
 const P5Canvas = ({ 
   computedData, 
@@ -15,7 +16,11 @@ const P5Canvas = ({
   showPoints = true,
   onShowPointsChange = () => {},
   liveUpdate = true,
-  onLiveUpdateToggle = () => {} 
+  onLiveUpdateToggle = () => {},
+  editMode = false,
+  onPointMove = null,
+  selectedNodeId = null,
+  showEditButton = false
 }) => {
   const containerRef = useRef(null);
   const viewportRef = useRef(viewport);
@@ -23,6 +28,8 @@ const P5Canvas = ({
   const p5Ref = useRef(null);
   const prevMouseRef = useRef({ x: 0, y: 0 });
   const isPanning = useRef(false);
+  const [draggedPoint, setDraggedPoint] = useState(null);
+  const [selectedPointIndex, setSelectedPointIndex] = useState(null);
 
   useEffect(() => {
     viewportRef.current = viewport;
@@ -32,7 +39,6 @@ const P5Canvas = ({
     if (!containerRef.current) return;
     p5Ref.current = p5;
     
-    // Create canvas with initial size
     const initialWidth = containerRef.current.clientWidth;
     const initialHeight = containerRef.current.clientHeight;
     
@@ -40,7 +46,25 @@ const P5Canvas = ({
     
     canvas.style('width', '100%');
     canvas.style('height', '100%');
-    canvas.style('cursor', 'grab');
+    updateCursor(p5);
+  };
+
+  const updateCursor = (p5) => {
+    if (!p5?.canvas) return;
+    
+    if (editMode) {
+      if (draggedPoint) {
+        p5.canvas.style.cursor = 'grabbing';
+      } else if (selectedPointIndex !== null) {
+        p5.canvas.style.cursor = 'grab';
+      } else {
+        p5.canvas.style.cursor = 'pointer';
+      }
+    } else if (mode === 'pan') {
+      p5.canvas.style.cursor = isPanning.current ? 'grabbing' : 'grab';
+    } else {
+      p5.canvas.style.cursor = 'default';
+    }
   };
 
   const parseColor = (p5, color) => {
@@ -119,6 +143,102 @@ const P5Canvas = ({
     isPanning.current = false;
   };
 
+  const screenToWorld = (p5, screenX, screenY) => {
+    return {
+      x: (screenX - p5.width/2) / viewport.zoom - viewport.x,
+      y: (screenY - p5.height/2) / viewport.zoom - viewport.y
+    };
+  };
+
+  const worldToScreen = (p5, worldX, worldY) => {
+    return {
+      x: (worldX + viewport.x) * viewport.zoom + p5.width/2,
+      y: (worldY + viewport.y) * viewport.zoom + p5.height/2
+    };
+  };
+
+  const mousePressed = (p5) => {
+    if (!editMode || !isMouseOver.current) return;
+    
+    // Check if we have valid data before proceeding
+    if (!computedData?.result?.result?.points) {
+      console.log('No valid points data available');
+      return;
+    }
+    
+    const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+    const points = computedData.result.result.points;
+    const dragRadius = 20 / viewport.zoom;
+
+    let foundPoint = false;
+    let closestDist = Infinity;
+    let closestIndex = -1;
+
+    // Find the closest point within radius
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i];
+      if (!point) continue;
+
+      const dx = point.x - worldPos.x;
+      const dy = point.y - worldPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist < dragRadius && dist < closestDist) {
+        closestDist = dist;
+        closestIndex = i;
+        foundPoint = true;
+      }
+    }
+
+    if (foundPoint) {
+      const point = points[closestIndex];
+      setSelectedPointIndex(closestIndex);
+      setDraggedPoint({
+        index: closestIndex,
+        originalPos: { x: point.x, y: point.y }
+      });
+      isPanning.current = false;
+    } else {
+      setSelectedPointIndex(null);
+    }
+  };
+
+  const mouseDragged = (p5) => {
+    if (!draggedPoint || !editMode) return;
+    
+    // Check if we have valid data before proceeding
+    if (!computedData?.result?.result?.points) {
+      console.log('No valid points data available');
+      setDraggedPoint(null);
+      return;
+    }
+    
+    // Convert screen coordinates to world coordinates
+    const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+    console.log('Drag to:', worldPos);
+
+    // Call the point move handler with the new position
+    onPointMove?.(draggedPoint.index, {
+      originalPos: draggedPoint.originalPos,
+      newPos: { x: worldPos.x, y: worldPos.y }
+    });
+
+    // Update the computedData directly for immediate visual feedback
+    if (computedData?.result?.result?.points) {
+      computedData.result.result.points[draggedPoint.index] = {
+        ...computedData.result.result.points[draggedPoint.index],
+        x: worldPos.x,
+        y: worldPos.y
+      };
+    }
+  };
+
+  const mouseReleased = () => {
+    if (draggedPoint) {
+      setDraggedPoint(null);
+    }
+  };
+
   const draw = (p5) => {
     const viewport = viewportRef.current;
     
@@ -190,7 +310,38 @@ const P5Canvas = ({
     
     // Draw the canvas data
     drawCanvas(p5, viewport, topLeft, bottomRight);
-    
+
+    // Draw points in edit mode - MOVE THIS INSIDE THE TRANSFORMED COORDINATE SYSTEM
+    if (editMode && computedData?.result?.result?.points) {
+      // Only draw edit points if we have valid data
+      computedData.result.result.points.forEach((point, index) => {
+        if (!point) return;
+        
+        const isSelected = index === selectedPointIndex;
+        const isDragged = draggedPoint && draggedPoint.index === index;
+        
+        // Draw highlight stroke for selected/dragged points
+        if (isSelected || isDragged) {
+          p5.stroke(0);
+          p5.strokeWeight(2 / viewport.zoom);
+        } else {
+          p5.noStroke();
+        }
+
+        // Fill color based on state
+        if (isDragged) {
+          p5.fill(255, 165, 0); // Orange for dragged point
+        } else if (isSelected) {
+          p5.fill(255, 255, 0); // Yellow for selected point
+        } else {
+          p5.fill(200, 200, 0); // Darker yellow for other points
+        }
+
+        const size = (isDragged || isSelected) ? 8 / viewport.zoom : 6 / viewport.zoom;
+        p5.circle(point.x, point.y, size);
+      });
+    }
+
     p5.pop();
 
     // Handle panning
@@ -198,7 +349,6 @@ const P5Canvas = ({
       if (!isPanning.current) {
         isPanning.current = true;
         prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
-        p5.canvas.style.cursor = 'grabbing';
       } else {
         const dx = (p5.mouseX - prevMouseRef.current.x) / viewport.zoom;
         const dy = (p5.mouseY - prevMouseRef.current.y) / viewport.zoom;
@@ -209,8 +359,9 @@ const P5Canvas = ({
       }
     } else {
       isPanning.current = false;
-      p5.canvas.style.cursor = 'grab';
     }
+    
+    updateCursor(p5);
   };
 
   const mouseWheel = (p5, event) => {
@@ -296,6 +447,14 @@ const P5Canvas = ({
           onClick={() => onModeChange('pan')}
           title="Pan/Zoom Mode (H)"
         />
+        {showEditButton && (
+          <ToolbarButton
+            icon={<BsPencil size={20} />}
+            active={editMode}
+            onClick={() => onModeChange('edit')}
+            title="Edit Points (E)"
+          />
+        )}
       </div>
 
       {/* Right toolbar */}
@@ -327,6 +486,9 @@ const P5Canvas = ({
           mouseWheel={mouseWheel}
           keyPressed={keyPressed}
           keyReleased={keyReleased}
+          mousePressed={mousePressed}
+          mouseDragged={mouseDragged}
+          mouseReleased={mouseReleased}
         />
       </div>
     </div>
