@@ -6,6 +6,8 @@ import { BsCursor } from 'react-icons/bs';
 import { TbRefresh } from 'react-icons/tb';
 import { BsCircle } from 'react-icons/bs';
 import { BsPencil } from 'react-icons/bs';
+import { BsVectorPen } from 'react-icons/bs';
+import { BsArrowsMove } from 'react-icons/bs';
 
 const P5Canvas = ({ 
   computedData, 
@@ -20,7 +22,12 @@ const P5Canvas = ({
   editMode = false,
   onPointMove = null,
   selectedNodeId = null,
-  showEditButton = false
+  showEditButton = false,
+  editType = 'move',
+  onEditTypeChange = () => {},
+  onLineEdit = null,
+  selectedLine = null,
+  onLineSelect = null
 }) => {
   const containerRef = useRef(null);
   const viewportRef = useRef(viewport);
@@ -30,6 +37,13 @@ const P5Canvas = ({
   const isPanning = useRef(false);
   const [draggedPoint, setDraggedPoint] = useState(null);
   const [selectedPointIndex, setSelectedPointIndex] = useState(null);
+  const [lineEditMode, setLineEditMode] = useState(false);
+  const [currentMode, setCurrentMode] = useState('pan');
+  const [currentEditType, setCurrentEditType] = useState('move');
+  const [currentLine, setCurrentLine] = useState([]);
+  const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
+
+  const isEditMode = currentMode === 'edit';
 
   useEffect(() => {
     viewportRef.current = viewport;
@@ -52,7 +66,7 @@ const P5Canvas = ({
   const updateCursor = (p5) => {
     if (!p5?.canvas) return;
     
-    if (editMode) {
+    if (isEditMode) {
       if (draggedPoint) {
         p5.canvas.style.cursor = 'grabbing';
       } else if (selectedPointIndex !== null) {
@@ -60,7 +74,7 @@ const P5Canvas = ({
       } else {
         p5.canvas.style.cursor = 'pointer';
       }
-    } else if (mode === 'pan') {
+    } else if (currentMode === 'pan') {
       p5.canvas.style.cursor = isPanning.current ? 'grabbing' : 'grab';
     } else {
       p5.canvas.style.cursor = 'default';
@@ -85,6 +99,25 @@ const P5Canvas = ({
       console.warn('Invalid color:', color);
       return p5.color(0);
     }
+  };
+
+  const drawDashedLine = (p5, x1, y1, x2, y2, dashLength = 5) => {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const dashCount = Math.floor(distance / dashLength);
+    const dashX = dx / dashCount;
+    const dashY = dy / dashCount;
+
+    p5.push();
+    for (let i = 0; i < dashCount; i += 2) {
+      const startX = x1 + (dashX * i);
+      const startY = y1 + (dashY * i);
+      const endX = x1 + (dashX * (i + 1));
+      const endY = y1 + (dashY * (i + 1));
+      p5.line(startX, startY, endX, endY);
+    }
+    p5.pop();
   };
 
   const drawCanvas = (p5, viewport, topLeft, bottomRight) => {
@@ -119,15 +152,72 @@ const P5Canvas = ({
       p5.push();
       p5.noFill();
 
-      canvas.lines.forEach(line => {
+      canvas.lines.forEach((line, lineIndex) => {
         if (line.points.length > 1) {
-          p5.stroke(parseColor(p5, line.color));
-          p5.strokeWeight((line.thickness || 2) / viewport.zoom);
-          const startPoint = canvas.points[line.points[0]];
-          const endPoint = canvas.points[line.points[1]];
+          // Highlight selected line
+          if (selectedLine === lineIndex) {
+            p5.stroke(255, 165, 0); // Orange for selected line
+            p5.strokeWeight((line.thickness + 2) / viewport.zoom);
+          } else {
+            p5.stroke(parseColor(p5, line.color));
+            p5.strokeWeight((line.thickness || 2) / viewport.zoom);
+          }
+
+          // Draw line segments
+          for (let i = 0; i < line.points.length - 1; i++) {
+            const startPoint = canvas.points[line.points[i]];
+            const endPoint = canvas.points[line.points[i + 1]];
+            if (startPoint && endPoint) {
+              p5.line(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
+            }
+          }
+        }
+      });
+      p5.pop();
+    }
+
+    // Draw line preview
+    if (isEditMode && currentEditType === 'line' && computedData?.result?.result?.points) {
+      const points = computedData.result.result.points;
+      
+      p5.push();
+      p5.stroke(255, 165, 0); // Orange for preview
+      p5.strokeWeight(2 / viewport.zoom);
+
+      // Draw current line
+      if (currentLine.length > 0) {
+        for (let i = 0; i < currentLine.length - 1; i++) {
+          const startPoint = points[currentLine[i]];
+          const endPoint = points[currentLine[i + 1]];
           if (startPoint && endPoint) {
             p5.line(startPoint.x, startPoint.y, endPoint.x, endPoint.y);
           }
+        }
+
+        // Draw line to hovered point
+        if (hoveredPointIndex !== -1) {
+          const lastPoint = points[currentLine[currentLine.length - 1]];
+          const hoverPoint = points[hoveredPointIndex];
+          if (lastPoint && hoverPoint) {
+            drawDashedLine(
+              p5,
+              lastPoint.x,
+              lastPoint.y,
+              hoverPoint.x,
+              hoverPoint.y,
+              10 / viewport.zoom
+            );
+          }
+        }
+      }
+
+      // Highlight hoverable points
+      points.forEach((point, index) => {
+        if (!point) return;
+        if (index === hoveredPointIndex) {
+          p5.fill(255, 165, 0); // Orange for hovered point
+          p5.noStroke();
+          p5.circle(point.x, point.y, 8 / viewport.zoom);
         }
       });
       p5.pop();
@@ -157,24 +247,10 @@ const P5Canvas = ({
     };
   };
 
-  const mousePressed = (p5) => {
-    if (!editMode || !isMouseOver.current) return;
-    
-    // Check if we have valid data before proceeding
-    if (!computedData?.result?.result?.points) {
-      console.log('No valid points data available');
-      return;
-    }
-    
+  const findPointUnderMouse = (p5, points) => {
     const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
-    const points = computedData.result.result.points;
     const dragRadius = 20 / viewport.zoom;
 
-    let foundPoint = false;
-    let closestDist = Infinity;
-    let closestIndex = -1;
-
-    // Find the closest point within radius
     for (let i = 0; i < points.length; i++) {
       const point = points[i];
       if (!point) continue;
@@ -183,53 +259,138 @@ const P5Canvas = ({
       const dy = point.y - worldPos.y;
       const dist = Math.sqrt(dx * dx + dy * dy);
       
-      if (dist < dragRadius && dist < closestDist) {
-        closestDist = dist;
-        closestIndex = i;
-        foundPoint = true;
+      if (dist < dragRadius) {
+        return i;
       }
     }
+    return -1;
+  };
 
-    if (foundPoint) {
-      const point = points[closestIndex];
-      setSelectedPointIndex(closestIndex);
-      setDraggedPoint({
-        index: closestIndex,
-        originalPos: { x: point.x, y: point.y }
-      });
-      isPanning.current = false;
-    } else {
-      setSelectedPointIndex(null);
+  const mouseMoved = (p5) => {
+    if (!isMouseOver.current || !isEditMode || currentEditType !== 'line') return;
+    
+    const points = computedData?.result?.result?.points || [];
+    const pointIndex = findPointUnderMouse(p5, points);
+    setHoveredPointIndex(pointIndex);
+  };
+
+  const mousePressed = (p5) => {
+    if (!isMouseOver.current) return;
+    
+    if (isEditMode) {
+      if (currentEditType === 'move') {
+        // Check if we have valid data before proceeding
+        if (!computedData?.result?.result?.points) {
+          console.log('No valid points data available');
+          return;
+        }
+        
+        const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+        const points = computedData.result.result.points;
+        const dragRadius = 20 / viewport.zoom;
+
+        let foundPoint = false;
+        let closestDist = Infinity;
+        let closestIndex = -1;
+
+        // Find the closest point within radius
+        for (let i = 0; i < points.length; i++) {
+          const point = points[i];
+          if (!point) continue;
+
+          const dx = point.x - worldPos.x;
+          const dy = point.y - worldPos.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          
+          if (dist < dragRadius && dist < closestDist) {
+            closestDist = dist;
+            closestIndex = i;
+            foundPoint = true;
+          }
+        }
+
+        if (foundPoint) {
+          const point = points[closestIndex];
+          setSelectedPointIndex(closestIndex);
+          setDraggedPoint({
+            index: closestIndex,
+            originalPos: { x: point.x, y: point.y }
+          });
+          isPanning.current = false;
+        } else {
+          setSelectedPointIndex(null);
+        }
+      } else if (currentEditType === 'line') {
+        const points = computedData?.result?.result?.points || [];
+        const pointIndex = findPointUnderMouse(p5, points);
+
+        if (pointIndex !== -1) {
+          // If we clicked on a point
+          if (currentLine.includes(pointIndex)) {
+            // If point is already in line, remove it
+            setCurrentLine(prev => prev.filter(i => i !== pointIndex));
+          } else {
+            // Add point to line
+            const newLine = [...currentLine, pointIndex];
+            setCurrentLine(newLine);
+            
+            // If we have 2 or more points, create the line
+            if (newLine.length >= 2) {
+              onLineEdit?.(newLine); // Pass the entire line array instead of just the point
+              // Clear current line after creating it
+              setCurrentLine([]);
+            }
+          }
+        } else {
+          // If we clicked empty space, clear current line
+          setCurrentLine([]);
+          onLineSelect?.(null);
+        }
+      }
+    } else if (currentMode === 'pan') {
+      isPanning.current = true;
+      prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
     }
   };
 
   const mouseDragged = (p5) => {
-    if (!draggedPoint || !editMode) return;
-    
-    // Check if we have valid data before proceeding
-    if (!computedData?.result?.result?.points) {
-      console.log('No valid points data available');
-      setDraggedPoint(null);
-      return;
-    }
-    
-    // Convert screen coordinates to world coordinates
-    const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
-    console.log('Drag to:', worldPos);
+    if (!isMouseOver.current) return;
 
-    // Call the point move handler with the new position
-    onPointMove?.(draggedPoint.index, {
-      originalPos: draggedPoint.originalPos,
-      newPos: { x: worldPos.x, y: worldPos.y }
-    });
+    if (isEditMode) {
+      if (currentEditType === 'move' && draggedPoint) {
+        // Check if we have valid data before proceeding
+        if (!computedData?.result?.result?.points) {
+          console.log('No valid points data available');
+          setDraggedPoint(null);
+          return;
+        }
+        
+        // Convert screen coordinates to world coordinates
+        const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+        console.log('Drag to:', worldPos);
 
-    // Update the computedData directly for immediate visual feedback
-    if (computedData?.result?.result?.points) {
-      computedData.result.result.points[draggedPoint.index] = {
-        ...computedData.result.result.points[draggedPoint.index],
-        x: worldPos.x,
-        y: worldPos.y
-      };
+        // Call the point move handler with the new position
+        onPointMove?.(draggedPoint.index, {
+          originalPos: draggedPoint.originalPos,
+          newPos: { x: worldPos.x, y: worldPos.y }
+        });
+
+        // Update the computedData directly for immediate visual feedback
+        if (computedData?.result?.result?.points) {
+          computedData.result.result.points[draggedPoint.index] = {
+            ...computedData.result.result.points[draggedPoint.index],
+            x: worldPos.x,
+            y: worldPos.y
+          };
+        }
+      }
+    } else if (currentMode === 'pan' && isPanning.current) {
+      const dx = (p5.mouseX - prevMouseRef.current.x) / viewport.zoom;
+      const dy = (p5.mouseY - prevMouseRef.current.y) / viewport.zoom;
+      viewport.x += dx;
+      viewport.y += dy;
+      prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
+      onViewportChange({ ...viewport });
     }
   };
 
@@ -312,7 +473,7 @@ const P5Canvas = ({
     drawCanvas(p5, viewport, topLeft, bottomRight);
 
     // Draw points in edit mode - MOVE THIS INSIDE THE TRANSFORMED COORDINATE SYSTEM
-    if (editMode && computedData?.result?.result?.points) {
+    if (isEditMode && computedData?.result?.result?.points) {
       // Only draw edit points if we have valid data
       computedData.result.result.points.forEach((point, index) => {
         if (!point) return;
@@ -345,7 +506,7 @@ const P5Canvas = ({
     p5.pop();
 
     // Handle panning - add editMode check
-    if (mode === 'pan' && !editMode && isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
+    if (currentMode === 'pan' && !isEditMode && isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
       if (!isPanning.current) {
         isPanning.current = true;
         prevMouseRef.current = { x: p5.mouseX, y: p5.mouseY };
@@ -386,7 +547,6 @@ const P5Canvas = ({
   };
 
   const keyPressed = (p5) => {
-    // Only process keyboard events if mouse is over the canvas
     if (!isMouseOver.current) return;
     
     if (p5.key === 'h' || p5.key === 'H') {
@@ -395,10 +555,15 @@ const P5Canvas = ({
         y: 0,
         zoom: 1
       };
-      // Update the viewport state
       onViewportChange(viewportRef.current);
     } else if (p5.key === ' ') {
       isSpacePressed.current = true;
+    } else if ((p5.key === 'e' || p5.key === 'E') && showEditButton) {
+      setCurrentMode('edit');
+      setCurrentEditType('move');
+    } else if ((p5.key === 'l' || p5.key === 'L') && showEditButton) {
+      setCurrentMode('edit');
+      setCurrentEditType('line');
     }
   };
 
@@ -437,23 +602,45 @@ const P5Canvas = ({
       <div className="absolute left-4 top-1/2 -translate-y-1/2 bg-white rounded-lg shadow-lg p-2 flex flex-col gap-2">
         <ToolbarButton
           icon={<BsCursor size={20} />}
-          active={mode === 'select'}
-          onClick={() => onModeChange('select')}
+          active={currentMode === 'select'}
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentMode('select');
+          }}
           title="Selection Mode (V)"
         />
         <ToolbarButton
           icon={<BiMove size={20} />}
-          active={mode === 'pan'}
-          onClick={() => onModeChange('pan')}
+          active={currentMode === 'pan'}
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentMode('pan');
+          }}
           title="Pan/Zoom Mode (H)"
         />
         {showEditButton && (
-          <ToolbarButton
-            icon={<BsPencil size={20} />}
-            active={editMode}
-            onClick={() => onModeChange('edit')}
-            title="Edit Points (E)"
-          />
+          <>
+            <ToolbarButton
+              icon={<BsArrowsMove size={20} />}
+              active={isEditMode && currentEditType === 'move'}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentMode('edit');
+                setCurrentEditType('move');
+              }}
+              title="Move Points (E)"
+            />
+            <ToolbarButton
+              icon={<BsVectorPen size={20} />}
+              active={isEditMode && currentEditType === 'line'}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentMode('edit');
+                setCurrentEditType('line');
+              }}
+              title="Edit Lines (L)"
+            />
+          </>
         )}
       </div>
 
@@ -489,6 +676,7 @@ const P5Canvas = ({
           mousePressed={mousePressed}
           mouseDragged={mouseDragged}
           mouseReleased={mouseReleased}
+          mouseMoved={mouseMoved}
         />
       </div>
     </div>
