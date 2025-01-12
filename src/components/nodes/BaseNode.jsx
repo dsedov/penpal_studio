@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Handle, Position } from 'reactflow';
 
 const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true }) => {
@@ -20,6 +20,18 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
     const step = 1 / (total + 1);
     return step * (index + 1);
   };
+
+  // Update isOutput when outputNodeId changes
+  useEffect(() => {
+    if (data.onToggleOutput) {
+      const isCurrentlyOutput = data.isOutput;
+      const shouldBeOutput = id === data.outputNodeId;
+      
+      if (isCurrentlyOutput !== shouldBeOutput) {
+        data.onToggleOutput(shouldBeOutput ? id : null);
+      }
+    }
+  }, [id, data.outputNodeId, data.isOutput, data.onToggleOutput]);
 
   return (
     <div className={`relative bg-white rounded-xl shadow-lg p-4 min-w-[200px] border-4 ${

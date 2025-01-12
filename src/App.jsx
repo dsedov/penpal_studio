@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ReactFlowProvider } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { Allotment } from "allotment";
@@ -11,6 +11,7 @@ import { useNodesState, useEdgesState } from 'reactflow';
 import { computeGraph } from './lib/nodeComputation';
 import { saveProjectToFile, loadProjectFromFile } from './lib/fileOperations';
 import { defaultNodeData } from './components/nodes/nodeTypes';
+import { nanoid } from 'nanoid';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -117,11 +118,21 @@ function App() {
             compute: defaultData.compute,
             onToggleBypass: (id) => handleBypassToggle(id),
             onToggleOutput: (id) => handleOutputToggle(id),
-            isOutput: node.data.isOutput,
+            outputNodeId: null,  // Will be updated after all nodes are loaded
+            isOutput: false,     // Reset isOutput state
             bypass: node.data.bypass
           }
         };
       });
+
+      // Update outputNodeId for all nodes
+      const savedOutputNode = projectData.nodes.find(node => node.data.isOutput);
+      if (savedOutputNode) {
+        reconstructedNodes.forEach(node => {
+          node.data.outputNodeId = savedOutputNode.id;
+        });
+        setOutputNodeId(savedOutputNode.id);
+      }
 
       setNodes(reconstructedNodes);
       setEdges(projectData.edges);
@@ -148,6 +159,59 @@ function App() {
       })
     );
   }, []);
+
+  const handleDuplicateNode = useCallback(() => {
+    if (!selectedNodeId) return;
+    
+    const nodeToDuplicate = nodes.find(node => node.id === selectedNodeId);
+    if (!nodeToDuplicate) return;
+
+    const newNode = {
+      ...nodeToDuplicate,
+      id: `node_${nanoid()}`,
+      position: {
+        x: nodeToDuplicate.position.x + 20,
+        y: nodeToDuplicate.position.y + 20
+      },
+      data: {
+        ...nodeToDuplicate.data,
+        isOutput: false,  // Reset output state for the duplicate
+        bypass: false,    // Reset bypass state for the duplicate
+        onToggleBypass: (id) => handleBypassToggle(id),
+        onToggleOutput: (id) => handleOutputToggle(id),
+      },
+      selected: false
+    };
+
+    setNodes(nds => [...nds, newNode]);
+  }, [selectedNodeId, nodes, handleBypassToggle, handleOutputToggle]);
+
+  // Add keyboard shortcut handler
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.ctrlKey && e.key === 'd') {
+        e.preventDefault();  // Prevent browser's bookmark dialog
+        handleDuplicateNode();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleDuplicateNode]);
+
+  // Update all nodes when outputNodeId changes
+  useEffect(() => {
+    setNodes(nds => 
+      nds.map(node => ({
+        ...node,
+        data: {
+          ...node.data,
+          outputNodeId,
+          isOutput: node.id === outputNodeId
+        }
+      }))
+    );
+  }, [outputNodeId]);
 
   return (
     <div className="h-screen w-screen flex flex-col dark">
