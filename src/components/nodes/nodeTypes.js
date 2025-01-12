@@ -3,6 +3,7 @@ import PointGridNode, { defaultData as pointGridDefaultData } from './PointGridN
 import RenderSVGNode, { defaultData as renderSVGDefaultData } from './RenderSVGNode';
 import MergeNode, { defaultData as mergeDefaultData } from './MergeNode';
 import LineNode, { defaultData as lineDefaultData } from './LineNode';
+import ConnectNearbyNode, { defaultData as connectNearbyDefaultData } from './ConnectNearbyNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -10,6 +11,7 @@ export const nodeTypes = {
   renderSVG: RenderSVGNode,
   merge: MergeNode,
   line: LineNode,
+  connectNearby: ConnectNearbyNode,
 };
 
 export const defaultNodeData = {
@@ -18,4 +20,5 @@ export const defaultNodeData = {
   renderSVG: renderSVGDefaultData,
   merge: mergeDefaultData,
   line: lineDefaultData,
+  connectNearby: connectNearbyDefaultData,
 }; 
