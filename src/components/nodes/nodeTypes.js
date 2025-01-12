@@ -8,6 +8,7 @@ import CropNode, { defaultData as cropDefaultData } from './CropNode';
 import CleanupNode, { defaultData as cleanupDefaultData } from './CleanupNode';
 import TransformNode, { defaultData as transformDefaultData } from './TransformNode';
 import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePropertyChange } from './CodeNode';
+import SoftTransformNode, { defaultData as softTransformDefaultData } from './SoftTransformNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -20,6 +21,7 @@ export const nodeTypes = {
   cleanup: CleanupNode,
   transform: TransformNode,
   code: CodeNode,
+  softTransform: SoftTransformNode,
 };
 
 export const defaultNodeData = {
@@ -33,6 +35,7 @@ export const defaultNodeData = {
   cleanup: cleanupDefaultData,
   transform: transformDefaultData,
   code: codeDefaultData,
+  softTransform: softTransformDefaultData,
 };
 
 export const propertyChangeHandlers = {
