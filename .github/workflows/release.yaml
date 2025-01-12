@@ -23,26 +23,49 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
 
-      - name: Install dependencies (ubuntu only)
-        if: matrix.platform == 'ubuntu-latest'
+      # Force use of GPR for Windows
+      - name: Use GNU tar
+        if: matrix.platform == 'windows-latest'
+        shell: cmd
         run: |
-          sudo apt-get update
-          sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+          echo "C:\Program Files\Git\usr\bin" >> $GITHUB_PATH
 
+      # Install dependencies
       - name: Install frontend dependencies
-        run: npm install
+        run: |
+          npm install
+          npm run build
 
+      # Build for release
       - name: Build the app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_PRIVATE_KEY: ${{ secrets.TAURI_PRIVATE_KEY }}
+          TAURI_KEY_PASSWORD: ${{ secrets.TAURI_KEY_PASSWORD }}
         with:
           tagName: ${{ github.ref_name }}
-          releaseName: 'App v__VERSION__'
-          releaseBody: 'See the assets to download this version and install.'
+          releaseName: 'Penpal Studio v__VERSION__'
+          releaseBody: |
+            Changes in this Release:
+            - First release
           releaseDraft: true
           prerelease: false
+          args: --verbose
+
+      # Make sure we can see what's in the output directory
+      - name: List release artifacts
+        if: matrix.platform == 'windows-latest'
+        run: dir src-tauri\target\release\bundle
+        shell: cmd
+
+      - name: List release artifacts
+        if: matrix.platform == 'macos-latest'
+        run: ls src-tauri/target/release/bundle
