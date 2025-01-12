@@ -11,10 +11,10 @@ export const defaultData = {
   properties: {
     iterations: {
       label: 'Iterations',
-      type: 'number',
-      value: 1,
+      type: 'int',
+      value: 5,
       min: 1,
-      max: 5,
+      max: 1000,
       step: 1
     }
   },
@@ -26,17 +26,26 @@ export const defaultData = {
       const iterations = properties.iterations.value;
       let result = currentCanvas.clone();
 
+      // First iteration: provide initial canvas to loop network
+      let currentLoopCanvas = result.clone();
+
       for (let i = 0; i < iterations; i++) {
+        // Make current canvas available via loopOut
+        // Other nodes will use this canvas, process it, and feed it back to loopIn
+        result = currentLoopCanvas.clone();
+
+        // Wait for the loop network to process (via loopIn)
         if (inputs.loopIn?.result) {
-          result = inputs.loopIn.result.clone();
+          // Get the processed canvas and use it for next iteration
+          currentLoopCanvas = inputs.loopIn.result.clone();
         }
       }
 
       return {
-        result: result,
+        result: currentLoopCanvas, // Final result after all iterations
         outputs: {
-          result: result,
-          loopOut: currentCanvas
+          result: currentLoopCanvas,
+          loopOut: result // Current iteration canvas for loop network
         },
         error: null
       };
