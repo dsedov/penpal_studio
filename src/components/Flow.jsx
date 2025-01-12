@@ -234,7 +234,9 @@ const Flow = ({
         },
       }))
     );
-  }, [setNodes]);
+    // Add this to trigger recomputation after bypass toggle
+    setTimeout(() => computeGraphOnce(), 0);
+  }, [setNodes, computeGraphOnce]);
 
   const handleToggleOutput = useCallback((nodeId) => {
     // First call the parent's output toggle handler

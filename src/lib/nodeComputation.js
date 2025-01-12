@@ -31,15 +31,14 @@ export const getComputationOrder = (outputNode, nodes, edges) => {
 
 // Main computation function
 export const computeNodeOutput = async (node, inputData, nodes, edges) => {
+  // If node is bypassed, return the first input
   if (node.data.bypass) {
-    // If node is bypassed, pass through the first input
-    // Get the first connected input
     const nodeInputs = getInputNodes(node, nodes, edges);
-    if (nodeInputs.length === 0) return null;
-    
-    const firstInputId = nodeInputs[0].inputId;
-    const firstInput = inputData[firstInputId];
-    return firstInput || null;
+    if (nodeInputs.length > 0) {
+      const firstInputId = nodeInputs[0].inputId || 'input';
+      return inputData[firstInputId];
+    }
+    return null;
   }
 
   // Get the compute function for this node type
@@ -75,6 +74,17 @@ export const computeGraph = async (nodes, edges) => {
     if (!node) return null;
 
     try {
+      // Handle bypass first
+      if (node.data.bypass) {
+        const inputEdges = edges.filter(edge => edge.target === nodeId);
+        if (inputEdges.length > 0) {
+          // Get the first input's result
+          const firstInputResult = await computeNodeOutput(inputEdges[0].source);
+          return firstInputResult; // Pass through the input result directly
+        }
+        return { result: null, error: null };
+      }
+
       // Get input data
       const inputData = {};
       const inputEdges = edges.filter(edge => edge.target === nodeId);
