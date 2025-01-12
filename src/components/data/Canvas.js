@@ -333,6 +333,27 @@ class Canvas {
             thickness: thickness
         });
     }
+
+    getBounds() {
+        if (!this.points.length) {
+            return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+        }
+        
+        return this.points.reduce((bounds, point) => {
+            if (!point) return bounds;
+            return {
+                minX: Math.min(bounds.minX, point.x),
+                minY: Math.min(bounds.minY, point.y),
+                maxX: Math.max(bounds.maxX, point.x),
+                maxY: Math.max(bounds.maxY, point.y)
+            };
+        }, {
+            minX: Infinity,
+            minY: Infinity,
+            maxX: -Infinity,
+            maxY: -Infinity
+        });
+    }
 }
 
 export default Canvas;

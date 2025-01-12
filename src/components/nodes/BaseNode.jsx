@@ -21,6 +21,21 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
     return step * (index + 1);
   };
 
+  const PropertyInput = ({ property, onChange }) => {
+    switch (property.type) {
+      case 'boolean':
+        return (
+          <input
+            type="checkbox"
+            checked={property.value}
+            onChange={(e) => onChange(e.target.checked)}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className={`relative bg-white rounded-xl shadow-lg p-4 min-w-[200px] border-4 ${
       selected 

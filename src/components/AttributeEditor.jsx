@@ -5,6 +5,7 @@ import { Vec2Input } from './inputs/Vec2Input';
 import { ColorInput } from './inputs/ColorInput';
 import { StringInput } from './inputs/StringInput';
 import { CodeInput } from './inputs/CodeInput';
+import { MenuInput } from './inputs/MenuInput';
 import { save } from '@tauri-apps/plugin-dialog';
 
 const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
@@ -96,6 +97,28 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
               Browse
             </button>
           </div>
+        );
+      case 'boolean':
+        return (
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={property.value}
+              onChange={(e) => handlePropertyChange(propertyName, e.target.checked)}
+              className="w-4 h-4"
+            />
+            <label className="text-sm text-gray-300">{property.label}</label>
+          </div>
+        );
+      case 'menu':
+        return (
+          <MenuInput
+            key={propertyName}
+            label={property.label}
+            value={property.value}
+            options={property.options}
+            onChange={(value) => handlePropertyChange(propertyName, value)}
+          />
         );
       default:
         return null;
