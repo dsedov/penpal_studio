@@ -122,4 +122,43 @@ export const computeGraph = async (nodes, edges) => {
 export const clearComputationCache = () => {
   computationCache = new Map();
   lastComputeTime = 0;
-}; 
+};
+
+async function computeNode(node, nodeInputs, computedNodes) {
+  // ... existing compute node logic ...
+
+  if (node.type === 'loop') {
+    let currentCanvas = nodeInputs['initial-input']?.canvas;
+    if (!currentCanvas) return null;
+
+    const iterations = node.data.properties.iterations.value;
+    
+    // Store the initial canvas for the loop network
+    computedNodes[node.id] = {
+      canvas: currentCanvas.clone(),
+      outputs: {
+        'loop-out': currentCanvas.clone(),
+        'final-output': null
+      }
+    };
+
+    // Perform the iterations
+    for (let i = 0; i < iterations; i++) {
+      // The loop-out handle provides the current canvas to the loop network
+      computedNodes[node.id].outputs['loop-out'] = currentCanvas.clone();
+      
+      // Wait for the loop network to process (loop-in will be updated by connected nodes)
+      const loopResult = nodeInputs['loop-in']?.canvas;
+      
+      if (loopResult) {
+        currentCanvas = loopResult.clone();
+      }
+    }
+
+    // Set the final output
+    computedNodes[node.id].outputs['final-output'] = currentCanvas;
+    return computedNodes[node.id];
+  }
+
+  // ... rest of the compute node logic ...
+} 

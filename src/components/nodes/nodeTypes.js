@@ -11,6 +11,7 @@ import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePrope
 import SoftTransformNode, { defaultData as softTransformDefaultData } from './SoftTransformNode';
 import EditNode, { defaultData as editDefaultData } from './EditNode';
 import { ModificationsInput } from '../inputs/ModificationsInput';
+import LoopNode, { defaultData as loopDefaultData } from './LoopNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -24,7 +25,8 @@ export const nodeTypes = {
   transform: TransformNode,
   code: CodeNode,
   softTransform: SoftTransformNode,
-  edit: EditNode
+  edit: EditNode,
+  loop: LoopNode
 };
 
 export const defaultNodeData = {
@@ -39,7 +41,8 @@ export const defaultNodeData = {
   transform: transformDefaultData,
   code: codeDefaultData,
   softTransform: softTransformDefaultData,
-  edit: editDefaultData
+  edit: editDefaultData,
+  loop: loopDefaultData
 };
 
 export const propertyChangeHandlers = {

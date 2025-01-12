@@ -1,7 +1,14 @@
-import React, { useEffect } from 'react';
-import { Handle, Position } from 'reactflow';
+import React from 'react';
+import { Handle } from 'reactflow';
 
-const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true }) => {
+const BaseNode = ({ 
+  data, 
+  id, 
+  selected, 
+  inputs = ['default'], 
+  outputs = ['default'],
+  showInputs = true 
+}) => {
   const baseToggleClass = "w-4 h-8 rounded cursor-pointer transition-colors";
   const leftToggleClass = `${baseToggleClass} ${
     data.bypass
@@ -14,25 +21,41 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
       : "bg-gray-200 hover:bg-gray-300"
   }`;
 
-  // Calculate positions for multiple inputs
-  const getInputPosition = (index, total) => {
-    if (total === 1) return 0.5; // Center if only one input
+  // Calculate positions for multiple inputs/outputs
+  const getPosition = (index, total) => {
+    if (total === 1) return 0.5; // Center if only one
     const step = 1 / (total + 1);
     return step * (index + 1);
   };
 
-  const PropertyInput = ({ property, onChange }) => {
-    switch (property.type) {
-      case 'boolean':
-        return (
-          <input
-            type="checkbox"
-            checked={property.value}
-            onChange={(e) => onChange(e.target.checked)}
-          />
-        );
-      default:
-        return null;
+  // Get handle style based on type
+  const getHandleStyle = (type, position, isOutput = false) => {
+    const baseStyle = {
+      left: `${position * 100}%`,
+      transform: isOutput ? 'translate(-50%, 9px)' : 'translate(-50%, -9px)'
+    };
+
+    switch(type) {
+      case 'loop':
+        return {
+          ...baseStyle,
+          width: '48px',
+          height: '12px',
+          borderRadius: '4px',
+          background: '#000'
+        };
+      case 'multi':
+        return {
+          ...baseStyle,
+          width: '24px',
+          height: '24px'
+        };
+      default: // 'single'
+        return {
+          ...baseStyle,
+          width: '12px',
+          height: '12px'
+        };
     }
   };
 
@@ -49,19 +72,19 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
       style={{ opacity: data.bypass ? 0.5 : 1 }}
     >
       {/* Input Handles */}
-      {showInputs && inputs.map((input, index) => (
-        <Handle
-          key={`input-${input.id || input}`}
-          type="target"
-          position={Position.Top}
-          id={input.id || input}
-          className={input.type === 'multi' ? "w-6 h-6" : "w-3 h-3"}
-          style={{ 
-            left: `${getInputPosition(index, inputs.length) * 100}%`,
-            transform: 'translate(-50%, -50%)'
-          }}
-        />
-      ))}
+      {showInputs && inputs.map((input, index) => {
+        const inputId = input.id || input;
+        const position = getPosition(index, inputs.length);
+        return (
+          <Handle
+            key={`input-${inputId}`}
+            type="target"
+            position="top"
+            id={inputId}
+            style={getHandleStyle(input.type, position)}
+          />
+        );
+      })}
       
       <div
         className={`absolute left-0 top-1/2 -translate-y-1/2 -translate-x-5 ${leftToggleClass}`}
@@ -75,12 +98,20 @@ const BaseNode = ({ data, id, selected, inputs = ['default'], showInputs = true 
       />
       <div className="font-bold">{data.label}</div>
 
-      {/* Output Handle */}
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="w-3 h-3"
-      />
+      {/* Output Handles */}
+      {outputs.map((output, index) => {
+        const outputId = output.id || output;
+        const position = getPosition(index, outputs.length);
+        return (
+          <Handle
+            key={`output-${outputId}`}
+            type="source"
+            position="bottom"
+            id={outputId}
+            style={getHandleStyle(output.type, position, true)}
+          />
+        );
+      })}
     </div>
   );
 };

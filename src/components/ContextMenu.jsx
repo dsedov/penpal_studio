@@ -75,4 +75,47 @@ const ContextMenu = ({ position, onCreateNode }) => {
   );
 };
 
+const nodeCategories = {
+  Input: ['canvas', 'pointGrid'],
+  Transform: ['transform', 'softTransform', 'crop', 'cleanup', 'edit'],
+  Draw: ['line', 'renderSVG'],
+  Connect: ['connectNearby', 'merge'],
+  Code: ['code'],
+  Flow: ['loop']
+};
+
+const categoryColors = {
+  Input: '#2ecc71',
+  Transform: '#e74c3c',
+  Draw: '#3498db',
+  Connect: '#f1c40f',
+  Code: '#9b59b6',
+  Flow: '#8B4513'
+};
+
+const categoryLabels = {
+  Input: 'Input Nodes',
+  Transform: 'Transform Nodes',
+  Draw: 'Draw Nodes',
+  Connect: 'Connect Nodes',
+  Code: 'Code Nodes',
+  Flow: 'Flow Control'
+};
+
+const nodeLabels = {
+  canvas: 'Canvas',
+  pointGrid: 'Point Grid',
+  transform: 'Transform',
+  softTransform: 'Soft Transform',
+  crop: 'Crop',
+  cleanup: 'Cleanup',
+  edit: 'Edit',
+  line: 'Line',
+  renderSVG: 'Render SVG',
+  connectNearby: 'Connect Nearby',
+  merge: 'Merge',
+  code: 'Code',
+  loop: 'Loop'
+};
+
 export default ContextMenu;
