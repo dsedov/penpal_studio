@@ -7,6 +7,7 @@ import ConnectNearbyNode, { defaultData as connectNearbyDefaultData } from './Co
 import CropNode, { defaultData as cropDefaultData } from './CropNode';
 import CleanupNode, { defaultData as cleanupDefaultData } from './CleanupNode';
 import TransformNode, { defaultData as transformDefaultData } from './TransformNode';
+import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePropertyChange } from './CodeNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -18,6 +19,7 @@ export const nodeTypes = {
   crop: CropNode,
   cleanup: CleanupNode,
   transform: TransformNode,
+  code: CodeNode,
 };
 
 export const defaultNodeData = {
@@ -30,4 +32,9 @@ export const defaultNodeData = {
   crop: cropDefaultData,
   cleanup: cleanupDefaultData,
   transform: transformDefaultData,
+  code: codeDefaultData,
+};
+
+export const propertyChangeHandlers = {
+  code: codePropertyChange
 }; 
