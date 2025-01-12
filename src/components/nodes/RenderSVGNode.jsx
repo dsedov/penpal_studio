@@ -3,6 +3,11 @@ import BaseNode from './BaseNode';
 import Canvas from '../data/Canvas';
 import { writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 
+const MM_TO_PX = 3.7795275591;
+
+// Helper function to convert mm to pixels
+const mmToPx = (mm) => mm * MM_TO_PX;
+
 const generateSVG = (canvas) => {
   // First, group lines by color
   const linesByColor = new Map();
@@ -49,12 +54,12 @@ const generateSVG = (canvas) => {
     return typeof color === 'string' ? color : '#000000';
   };
 
-  const width = canvas.size.x;
-  const height = canvas.size.y;
+  const width = mmToPx(canvas.size.x);
+  const height = mmToPx(canvas.size.y);
   
   let svgContent = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
  <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
- <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"
+ <svg width="${width}px" height="${height}px" viewBox="0 0 ${width} ${height}"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape">
  `;
@@ -73,10 +78,10 @@ const generateSVG = (canvas) => {
     lines.forEach(line => {
       const startPoint = canvas.points[line.points[0]];
       const endPoint = canvas.points[line.points[1]];
-      svgContent += `    <line x1="${startPoint.x}" y1="${startPoint.y}" 
-                             x2="${endPoint.x}" y2="${endPoint.y}"
+      svgContent += `    <line x1="${mmToPx(startPoint.x)}" y1="${mmToPx(startPoint.y)}" 
+                             x2="${mmToPx(endPoint.x)}" y2="${mmToPx(endPoint.y)}"
                              stroke="${svgColor}"
-                             stroke-width="${line.thickness || 1}"
+                             stroke-width="${mmToPx(line.thickness || 0.25)}"
                        />\n`;
     });
     
