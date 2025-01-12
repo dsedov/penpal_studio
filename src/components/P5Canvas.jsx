@@ -297,6 +297,7 @@ const P5Canvas = ({
           active={liveUpdate}
           onClick={() => onLiveUpdateToggle(!liveUpdate)}
           title="Toggle Live Updates"
+          isLiveUpdate={true}
         />
         <ToolbarButton
           icon={<BsCircle size={20} />}
