@@ -18,6 +18,7 @@ import CropNode, { defaultData as cropDefaultData } from './Modify/CropNode';
 import EditNode, { defaultData as editDefaultData } from './Modify/EditNode';
 import CleanupNode, { defaultData as cleanupDefaultData } from './Modify/CleanupNode';
 import SubdivideNode, { defaultData as subdivideDefaultData } from './Modify/SubdivideNode';
+import CloseNode, { defaultData as closeDefaultData } from './Modify/CloseNode';
 
 // Utility
 import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePropertyChange } from './Utility/CodeNode';
@@ -51,7 +52,8 @@ export const nodeTypes = {
   clone: CloneNode,
   attributes: AttributesNode,
   duplicate: DuplicateNode,
-  subdivide: SubdivideNode
+  subdivide: SubdivideNode,
+  close: CloseNode
 };
 
 export const defaultNodeData = {
@@ -71,7 +73,8 @@ export const defaultNodeData = {
   clone: cloneDefaultData,
   attributes: attributesDefaultData,
   duplicate: duplicateDefaultData,
-  subdivide: subdivideDefaultData
+  subdivide: subdivideDefaultData,
+  close: closeDefaultData
 };
 
 export const propertyChangeHandlers = {
