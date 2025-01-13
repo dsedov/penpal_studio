@@ -12,6 +12,7 @@ import SoftTransformNode, { defaultData as softTransformDefaultData } from './So
 import EditNode, { defaultData as editDefaultData } from './EditNode';
 import { ModificationsInput } from '../inputs/ModificationsInput';
 import LoopNode, { defaultData as loopDefaultData } from './LoopNode';
+import CloneNode, { defaultData as cloneDefaultData } from './CloneNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -26,7 +27,8 @@ export const nodeTypes = {
   code: CodeNode,
   softTransform: SoftTransformNode,
   edit: EditNode,
-  loop: LoopNode
+  loop: LoopNode,
+  clone: CloneNode
 };
 
 export const defaultNodeData = {
@@ -42,7 +44,8 @@ export const defaultNodeData = {
   code: codeDefaultData,
   softTransform: softTransformDefaultData,
   edit: editDefaultData,
-  loop: loopDefaultData
+  loop: loopDefaultData,
+  clone: cloneDefaultData
 };
 
 export const propertyChangeHandlers = {

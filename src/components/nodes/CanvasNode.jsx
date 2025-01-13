@@ -27,7 +27,7 @@ export const defaultData = {
     backgroundColor: {
       label: 'Background color',
       type: 'color',
-      value: '#000000',
+      value: '#ffffff',
     }
   },
   compute: async (inputData, properties) => {

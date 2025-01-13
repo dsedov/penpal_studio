@@ -26,6 +26,8 @@ function App() {
   const [showPoints, setShowPoints] = useState(true);
   const [liveUpdate, setLiveUpdate] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  const [currentMode, setCurrentMode] = useState('pan');
+  const [currentEditType, setCurrentEditType] = useState(null);
 
   // Handle computation results
   const handleComputeResults = useCallback((results) => {
@@ -217,14 +219,44 @@ function App() {
         ? node.data.properties.modifications.value 
         : [];
 
-      // Find if we already have a move modification for this point
+      // In point creation mode, check if we're moving a point we just created
+      if (currentMode === 'edit' && currentEditType === 'point') {
+        // Find if this point was created in this EditNode
+        const pointCreationIndex = currentMods.findIndex(mod => 
+          mod.type === ModificationType.ADD_POINT && 
+          currentMods.indexOf(mod) === currentMods.length - 1 // Last modification
+        );
+
+        if (pointCreationIndex !== -1) {
+          // Update the creation position instead of adding a move modification
+          const updatedMods = [...currentMods];
+          updatedMods[pointCreationIndex] = {
+            type: ModificationType.ADD_POINT,
+            position: modification.newPos
+          };
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              properties: {
+                ...node.data.properties,
+                modifications: {
+                  ...node.data.properties.modifications,
+                  value: updatedMods
+                }
+              }
+            }
+          };
+        }
+      }
+
+      // Regular point movement handling
       const existingMoveIndex = currentMods.findIndex(mod => 
         mod.type === ModificationType.MOVE_POINT && 
         mod.pointIndex === modification.pointIndex
       );
 
       if (existingMoveIndex !== -1) {
-        // Update existing move with new destination but keep original starting position
         const updatedMods = [...currentMods];
         updatedMods[existingMoveIndex] = {
           ...modification,
@@ -245,7 +277,6 @@ function App() {
         };
       }
 
-      // If no existing move for this point, add new modification
       return {
         ...node,
         data: {
@@ -260,7 +291,7 @@ function App() {
         }
       };
     }));
-  }, [selectedNodeId]);
+  }, [selectedNodeId, currentMode, currentEditType]);
 
   // Add this new handler
   const handleLineEdit = useCallback((modification) => {
@@ -313,7 +344,7 @@ function App() {
     }
   }, [selectedNodeId, nodes, edges]);
 
-  // Add new handler
+  // Update point edit handler
   const handlePointEdit = useCallback((modification) => {
     if (!selectedNodeId) return;
 
@@ -328,14 +359,11 @@ function App() {
         // Find if this point was created in this EditNode
         const pointCreationIndex = currentMods.findIndex(mod => 
           mod.type === ModificationType.ADD_POINT && 
-          currentMods.indexOf(mod) < currentMods.findIndex(m => 
-            m.type === ModificationType.CREATE_LINE && 
-            m.points.includes(modification.pointIndex)
-          )
+          currentMods.indexOf(mod) === currentMods.length - 1 // Last modification
         );
 
         if (pointCreationIndex !== -1) {
-          // If point was created here, remove its creation mod and update line mods
+          // If it's a point we just created, simply remove the creation modification
           return {
             ...node,
             data: {
@@ -344,22 +372,7 @@ function App() {
                 ...node.data.properties,
                 modifications: {
                   ...node.data.properties.modifications,
-                  value: currentMods
-                    .filter((mod, index) => index !== pointCreationIndex) // Remove point creation
-                    .map(mod => {
-                      if (mod.type === ModificationType.CREATE_LINE) {
-                        // Update line points to remove deleted point
-                        return {
-                          ...mod,
-                          points: mod.points.filter(p => p !== modification.pointIndex)
-                        };
-                      }
-                      return mod;
-                    })
-                    .filter(mod => 
-                      mod.type !== ModificationType.CREATE_LINE || 
-                      mod.points.length >= 2
-                    ) // Remove invalid lines
+                  value: currentMods.filter((_, index) => index !== pointCreationIndex)
                 }
               }
             }
@@ -367,7 +380,7 @@ function App() {
         }
       }
 
-      // For other modifications (including deleting points from other nodes)
+      // For other modifications
       return {
         ...node,
         data: {
