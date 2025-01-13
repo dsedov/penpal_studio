@@ -76,13 +76,28 @@ const generateSVG = (canvas) => {
  `;
      
     lines.forEach(line => {
-      const startPoint = canvas.points[line.points[0]];
-      const endPoint = canvas.points[line.points[1]];
-      svgContent += `    <line x1="${mmToPx(startPoint.x)}" y1="${mmToPx(startPoint.y)}" 
+      if (line.points.length === 2) {
+        // Handle simple lines with 2 points
+        const startPoint = canvas.points[line.points[0]];
+        const endPoint = canvas.points[line.points[1]];
+        svgContent += `    <line x1="${mmToPx(startPoint.x)}" y1="${mmToPx(startPoint.y)}" 
                              x2="${mmToPx(endPoint.x)}" y2="${mmToPx(endPoint.y)}"
                              stroke="${svgColor}"
                              stroke-width="${mmToPx(line.thickness || 0.25)}"
                        />\n`;
+      } else {
+        // Handle polylines with multiple points
+        const points = line.points.map(pointIndex => {
+          const point = canvas.points[pointIndex];
+          return `${mmToPx(point.x)},${mmToPx(point.y)}`;
+        }).join(' ');
+        
+        svgContent += `    <polyline points="${points}"
+                             fill="none"
+                             stroke="${svgColor}"
+                             stroke-width="${mmToPx(line.thickness || 0.25)}"
+                       />\n`;
+      }
     });
     
     svgContent += `  </g>\n`;
