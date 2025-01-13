@@ -71,13 +71,6 @@ export const defaultData = {
         }
       });
 
-      // Filter out lines that have any points outside the bounds
-      canvas.lines = canvas.lines.filter(line => {
-        // Check if any point in the line is outside bounds
-        const hasPointOutside = line.points.some(pointIndex => pointsToRemove.has(pointIndex));
-        return !hasPointOutside;
-      });
-
       // Create new point array without removed points
       const newPoints = [];
       const pointIndexMap = new Map(); // Maps old indices to new ones
@@ -90,14 +83,15 @@ export const defaultData = {
         }
       });
 
-      // Update point indices in lines
-      canvas.lines = canvas.lines.filter(line => line.points?.length >= 2).map(line => ({
-        ...line,
-        points: line.points.map(oldIndex => pointIndexMap.get(oldIndex)).filter(index => index !== undefined)
-      }));
-
-      // Remove any lines that ended up with less than 2 points
-      canvas.lines = canvas.lines.filter(line => line.points.length >= 2);
+      // Update lines to use new point indices, keeping lines that still have at least 2 points
+      canvas.lines = canvas.lines
+        .map(line => ({
+          ...line,
+          points: line.points
+            .filter(oldIndex => !pointsToRemove.has(oldIndex))
+            .map(oldIndex => pointIndexMap.get(oldIndex))
+        }))
+        .filter(line => line.points.length >= 2);
 
       // Update canvas points
       canvas.points = newPoints;

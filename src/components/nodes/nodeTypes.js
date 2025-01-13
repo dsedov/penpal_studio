@@ -15,6 +15,7 @@ import LoopNode, { defaultData as loopDefaultData } from './LoopNode';
 import CloneNode, { defaultData as cloneDefaultData } from './CloneNode';
 import AttributesNode, { defaultData as attributesDefaultData } from './AttributesNode';
 import DuplicateNode, { defaultData as duplicateDefaultData } from './DuplicateNode';
+import SubdivideNode, { defaultData as subdivideDefaultData } from './SubdivideNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -32,7 +33,8 @@ export const nodeTypes = {
   loop: LoopNode,
   clone: CloneNode,
   attributes: AttributesNode,
-  duplicate: DuplicateNode
+  duplicate: DuplicateNode,
+  subdivide: SubdivideNode
 };
 
 export const defaultNodeData = {
@@ -51,7 +53,8 @@ export const defaultNodeData = {
   loop: loopDefaultData,
   clone: cloneDefaultData,
   attributes: attributesDefaultData,
-  duplicate: duplicateDefaultData
+  duplicate: duplicateDefaultData,
+  subdivide: subdivideDefaultData
 };
 
 export const propertyChangeHandlers = {
