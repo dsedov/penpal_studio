@@ -1,6 +1,6 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 // Seeded random number generator
 const seededRandom = (seed) => {
@@ -9,10 +9,10 @@ const seededRandom = (seed) => {
 };
 
 export const defaultData = {
-  label: 'Connect Nearby',
+  label: 'Connect',
   menu: {
-    category: 'Operators',
-    label: 'Connect Nearby',
+    category: 'Generate',
+    label: 'Connect',
     description: 'Connects points within a given radius'
   },
   properties: {
@@ -116,7 +116,7 @@ export const defaultData = {
   }
 };
 
-const ConnectNearbyNode = (props) => {
+const ConnectNode = (props) => {
   return (
     <BaseNode
       {...props}
@@ -130,4 +130,4 @@ const ConnectNearbyNode = (props) => {
   );
 };
 
-export default ConnectNearbyNode; 
+export default ConnectNode; 

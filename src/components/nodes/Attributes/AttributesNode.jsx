@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 import { useReactFlow } from 'reactflow';
 
 
 export const defaultData = {
   label: 'Attributes',
   menu: {
-    category: 'Transform',
+    category: 'Attributes',
     label: 'Attributes',
     description: 'Modify attributes of points or lines'
   },

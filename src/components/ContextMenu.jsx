@@ -107,7 +107,7 @@ const ContextMenu = ({ position, onCreateNode }) => {
 
   if (!position?.show) return null;
 
-  // Group nodes by category
+  // Group nodes by category and sort nodes within each category
   const nodesByCategory = Object.entries(defaultNodeData).reduce((acc, [type, data]) => {
     const category = data.menu?.category || 'Other';
     if (!acc[category]) {
@@ -120,30 +120,37 @@ const ContextMenu = ({ position, onCreateNode }) => {
     return acc;
   }, {});
 
+  // Sort nodes within each category
+  Object.keys(nodesByCategory).forEach(category => {
+    nodesByCategory[category].sort((a, b) => a.label.localeCompare(b.label));
+  });
+
   return (
     <div
       id="context-menu"
       className="fixed bg-white rounded shadow-lg py-1"
       style={menuStyle}
     >
-      {Object.entries(nodesByCategory).map(([category, nodes]) => (
-        <div 
-          key={category}
-          className="relative px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm whitespace-nowrap"
-          onMouseEnter={() => setActiveCategory(category)}
-          onMouseLeave={() => setActiveCategory(null)}
-        >
-          <span>{category}</span>
-          {activeCategory === category && (
-            <SubMenu 
-              category={category}
-              nodes={nodes}
-              onCreateNode={onCreateNode}
-              position={position}
-            />
-          )}
-        </div>
-      ))}
+      {Object.entries(nodesByCategory)
+        .sort(([a], [b]) => a.localeCompare(b)) // Sort categories alphabetically
+        .map(([category, nodes]) => (
+          <div 
+            key={category}
+            className="relative px-3 py-1 hover:bg-gray-100 cursor-pointer text-sm whitespace-nowrap"
+            onMouseEnter={() => setActiveCategory(category)}
+            onMouseLeave={() => setActiveCategory(null)}
+          >
+            <span>{category}</span>
+            {activeCategory === category && (
+              <SubMenu 
+                category={category}
+                nodes={nodes}
+                onCreateNode={onCreateNode}
+                position={position}
+              />
+            )}
+          </div>
+        ))}
     </div>
   );
 };

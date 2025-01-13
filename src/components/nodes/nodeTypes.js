@@ -1,29 +1,46 @@
-import CanvasNode, { defaultData as canvasDefaultData } from './CanvasNode';
-import PointGridNode, { defaultData as pointGridDefaultData } from './PointGridNode';
-import RenderSVGNode, { defaultData as renderSVGDefaultData } from './RenderSVGNode';
-import MergeNode, { defaultData as mergeDefaultData } from './MergeNode';
-import LineNode, { defaultData as lineDefaultData } from './LineNode';
-import ConnectNearbyNode, { defaultData as connectNearbyDefaultData } from './ConnectNearbyNode';
-import CropNode, { defaultData as cropDefaultData } from './CropNode';
-import CleanupNode, { defaultData as cleanupDefaultData } from './CleanupNode';
-import TransformNode, { defaultData as transformDefaultData } from './TransformNode';
-import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePropertyChange } from './CodeNode';
-import SoftTransformNode, { defaultData as softTransformDefaultData } from './SoftTransformNode';
-import EditNode, { defaultData as editDefaultData } from './EditNode';
+// Export
+import ExportSVGNode, { defaultData as exportSVGDefaultData } from './Export/ExportSVGNode';
+
+// Generate
+import CanvasNode, { defaultData as canvasDefaultData } from './Generate/CanvasNode';
+import PointGridNode, { defaultData as pointGridDefaultData } from './Generate/PointGridNode';
+import LineNode, { defaultData as lineDefaultData } from './Generate/LineNode';
+import ConnectNode, { defaultData as connectDefaultData } from './Generate/ConnectNode';
+import CloneNode, { defaultData as cloneDefaultData } from './Generate/CloneNode';
+import DuplicateNode, { defaultData as duplicateDefaultData } from './Generate/DuplicateNode';
+
+// Attributes
+import AttributesNode, { defaultData as attributesDefaultData } from './Attributes/AttributesNode';
+
+//Modify
+import TransformNode, { defaultData as transformDefaultData } from './Modify/TransformNode';
+import CropNode, { defaultData as cropDefaultData } from './Modify/CropNode';
+import EditNode, { defaultData as editDefaultData } from './Modify/EditNode';
+import CleanupNode, { defaultData as cleanupDefaultData } from './Modify/CleanupNode';
+import SubdivideNode, { defaultData as subdivideDefaultData } from './Modify/SubdivideNode';
+
+// Utility
+import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePropertyChange } from './Utility/CodeNode';
+import MergeNode, { defaultData as mergeDefaultData } from './Utility/MergeNode';
+import LoopNode, { defaultData as loopDefaultData } from './Utility/LoopNode';
+
+// Deform
+import SoftTransformNode, { defaultData as softTransformDefaultData } from './Deform/SoftTransformNode';
+
 import { ModificationsInput } from '../inputs/ModificationsInput';
-import LoopNode, { defaultData as loopDefaultData } from './LoopNode';
-import CloneNode, { defaultData as cloneDefaultData } from './CloneNode';
-import AttributesNode, { defaultData as attributesDefaultData } from './AttributesNode';
-import DuplicateNode, { defaultData as duplicateDefaultData } from './DuplicateNode';
-import SubdivideNode, { defaultData as subdivideDefaultData } from './SubdivideNode';
+
+
+
+
+
 
 export const nodeTypes = {
   canvas: CanvasNode,
   pointGrid: PointGridNode,
-  renderSVG: RenderSVGNode,
+  exportSVG: ExportSVGNode,
   merge: MergeNode,
   line: LineNode,
-  connectNearby: ConnectNearbyNode,
+  connect: ConnectNode,
   crop: CropNode,
   cleanup: CleanupNode,
   transform: TransformNode,
@@ -40,10 +57,10 @@ export const nodeTypes = {
 export const defaultNodeData = {
   canvas: canvasDefaultData,
   pointGrid: pointGridDefaultData,
-  renderSVG: renderSVGDefaultData,
+  exportSVG: exportSVGDefaultData,
   merge: mergeDefaultData,
   line: lineDefaultData,
-  connectNearby: connectNearbyDefaultData,
+  connect: connectDefaultData,
   crop: cropDefaultData,
   cleanup: cleanupDefaultData,
   transform: transformDefaultData,

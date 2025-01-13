@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 import { writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 
 const MM_TO_PX = 3.7795275591;
@@ -109,9 +109,9 @@ const generateSVG = (canvas) => {
 };
 
 export const defaultData = {
-  label: 'Render SVG',
+  label: 'Export SVG',
   menu: {
-    category: 'Render',
+    category: 'Export',
     label: 'SVG File',
     description: 'Exports the canvas to an SVG file'
   },
@@ -141,13 +141,13 @@ export const defaultData = {
   }
 };
 
-const RenderSVGNode = memo(({ id, data, selected }) => {
+const ExportSVGNode = memo(({ id, data, selected }) => {
   return (
     <BaseNode
       id={id}
       data={data}
       selected={selected}
-      title="Render SVG"
+      title="Export SVG"
       color="rgb(229, 231, 235)"
       inputs={[
         { id: 'input', label: 'Input' }
@@ -159,4 +159,4 @@ const RenderSVGNode = memo(({ id, data, selected }) => {
   );
 });
 
-export default RenderSVGNode; 
+export default ExportSVGNode; 

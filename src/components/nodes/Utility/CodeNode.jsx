@@ -1,6 +1,6 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 const DEFAULT_GLOBAL_CODE = `// Modify canvas directly
 // Example:
@@ -26,7 +26,7 @@ const DEFAULT_LINE_CODE = `// Modify each line
 export const defaultData = {
   label: 'Code',
   menu: {
-    category: 'Operators',
+    category: 'Utility',
     label: 'Code',
     description: 'Execute custom code on canvas elements'
   },

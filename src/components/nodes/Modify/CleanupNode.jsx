@@ -1,6 +1,6 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 const arePointsEqual = (p1, p2, tolerance = 0.0001) => {
   return Math.abs(p1.x - p2.x) < tolerance && Math.abs(p1.y - p2.y) < tolerance;
@@ -33,7 +33,7 @@ const areLinesVisuallyEqual = (line1, line2, points, tolerance = 0.0001) => {
 export const defaultData = {
   label: 'Cleanup',
   menu: {
-    category: 'Operators',
+    category: 'Modify',
     label: 'Cleanup',
     description: 'Removes duplicate points and lines'
   },

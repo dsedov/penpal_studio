@@ -1,11 +1,11 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 export const defaultData = {
   label: 'Transform',
   menu: {
-    category: 'Operators',
+    category: 'Modify',
     label: 'Transform',
     description: 'Transforms canvas content (translate, rotate, scale)'
   },

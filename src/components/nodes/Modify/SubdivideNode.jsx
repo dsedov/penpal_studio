@@ -1,11 +1,11 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 export const defaultData = {
   label: 'Subdivide',
   menu: {
-    category: 'Operators',
+    category: 'Modify',
     label: 'Subdivide',
     description: 'Subdivides lines into smaller segments'
   },

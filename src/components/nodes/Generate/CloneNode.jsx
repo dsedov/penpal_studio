@@ -1,11 +1,11 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 export const defaultData = {
   label: 'Clone',
   menu: {
-    category: 'Operators',
+    category: 'Generate',
     label: 'Clone',
     description: 'Clone pattern from source to target points'
   },

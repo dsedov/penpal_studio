@@ -1,10 +1,10 @@
 import React from 'react';
-import BaseNode from './BaseNode';
+import BaseNode from '../BaseNode';
 
 export const defaultData = {
   label: 'Loop',
   menu: {
-    category: 'Flow',
+    category: 'Utility',
     label: 'Loop',
     description: 'Loops through connected nodes multiple times'
   },

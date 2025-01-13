@@ -1,11 +1,11 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 export const defaultData = {
   label: 'Soft Transform',
   menu: {
-    category: 'Operators',
+    category: 'Deform',
     label: 'Soft Transform',
     description: 'Transforms canvas content with distance-based falloff'
   },

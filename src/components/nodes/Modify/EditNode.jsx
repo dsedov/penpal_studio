@@ -1,6 +1,6 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 // Define modification types
 export const ModificationType = {
@@ -12,11 +12,10 @@ export const ModificationType = {
   ADD_POINT_TO_LINE: 'ADD_POINT_TO_LINE',
   REMOVE_POINT_FROM_LINE: 'REMOVE_POINT_FROM_LINE'
 };
-
 export const defaultData = {
   label: 'Edit',
   menu: {
-    category: 'Operators',
+    category: 'Modify',
     label: 'Edit',
     description: 'Edit canvas elements'
   },

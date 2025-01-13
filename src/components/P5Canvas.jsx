@@ -9,7 +9,7 @@ import { BsPencil } from 'react-icons/bs';
 import { BsVectorPen } from 'react-icons/bs';
 import { BsArrowsMove } from 'react-icons/bs';
 import { BsPlus } from 'react-icons/bs';
-import { ModificationType } from './nodes/EditNode';
+import { ModificationType } from './nodes/Modify/EditNode';
 import { BsGrid3X3Gap } from 'react-icons/bs';
 
 const P5Canvas = ({ 

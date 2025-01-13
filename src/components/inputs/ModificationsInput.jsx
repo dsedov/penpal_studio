@@ -1,5 +1,5 @@
 import React from 'react';
-import { ModificationType } from '../nodes/EditNode';
+import { ModificationType } from '../nodes/Modify/EditNode';
 
 const ModificationDetails = ({ mod, onChange }) => {
   switch (mod.type) {

@@ -1,11 +1,11 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 export const defaultData = {
   label: 'Duplicate',
   menu: {
-    category: 'Operators',
+    category: 'Generate',
     label: 'Duplicate',
     description: 'Creates multiple copies with transformation'
   },

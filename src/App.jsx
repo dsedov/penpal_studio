@@ -12,7 +12,7 @@ import { computeGraph } from './lib/nodeComputation';
 import { saveProjectToFile, loadProjectFromFile } from './lib/fileOperations';
 import { defaultNodeData } from './components/nodes/nodeTypes';
 import { nanoid } from 'nanoid';
-import { ModificationType } from './components/nodes/EditNode';
+import { ModificationType } from './components/nodes/Modify/EditNode';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);

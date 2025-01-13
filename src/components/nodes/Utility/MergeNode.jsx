@@ -1,11 +1,11 @@
 import React, { memo } from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 export const defaultData = {
   label: 'Merge',
   menu: {
-    category: 'Operators',
+    category: 'Utility',
     label: 'Merge',
     description: 'Combines multiple canvases into one'
   },

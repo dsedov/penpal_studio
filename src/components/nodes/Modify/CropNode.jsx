@@ -1,11 +1,11 @@
 import React from 'react';
-import BaseNode from './BaseNode';
-import Canvas from '../data/Canvas';
+import BaseNode from '../BaseNode';
+import Canvas from '../../data/Canvas';
 
 export const defaultData = {
   label: 'Crop',
   menu: {
-    category: 'Operators',
+    category: 'Modify',
     label: 'Crop',
     description: 'Crops canvas content to specified bounds'
   },
