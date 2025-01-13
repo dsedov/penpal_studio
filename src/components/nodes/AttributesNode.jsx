@@ -75,6 +75,11 @@ export const defaultData = {
       const canvas = inputCanvas.clone();
       const { target, attributeName, attributeType } = properties;
 
+      // Skip if attribute name is empty
+      if (!attributeName.value) {
+        return { error: 'Attribute name cannot be empty' };
+      }
+
       // Get the appropriate value based on the attribute type
       let value;
       switch (attributeType.value) {
@@ -96,25 +101,23 @@ export const defaultData = {
           value = properties.colorValue.value;
           break;
         default:
-          value = null;
-      }
-
-      if (value === null) {
-        return { error: 'Invalid attribute type' };
+          return { error: 'Invalid attribute type' };
       }
 
       // Apply to points
       if (target.value === 'points' || target.value === 'all') {
-        canvas.points.forEach(point => {
-          point[attributeName.value] = value;
-        });
+        canvas.points = canvas.points.map(point => ({
+          ...point,
+          [attributeName.value]: value
+        }));
       }
 
       // Apply to lines
       if (target.value === 'lines' || target.value === 'all') {
-        canvas.lines.forEach(line => {
-          line[attributeName.value] = value;
-        });
+        canvas.lines = canvas.lines.map(line => ({
+          ...line,
+          [attributeName.value]: value
+        }));
       }
 
       return { result: canvas, error: null };
