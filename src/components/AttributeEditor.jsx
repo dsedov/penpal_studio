@@ -32,7 +32,8 @@ const AttributeEditor = ({ selectedNode, onPropertyChange, computedData }) => {
   };
 
   const renderPropertyInput = (propertyName, property) => {
-    if (property.type === 'internal') return null;
+    // Skip rendering if property is internal or explicitly set to not visible
+    if (property.type === 'internal' || property.visible === false) return null;
 
     const commonProps = {
       value: property.value,

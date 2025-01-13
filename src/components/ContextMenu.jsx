@@ -150,7 +150,7 @@ const ContextMenu = ({ position, onCreateNode }) => {
 
 const nodeCategories = {
   Input: ['canvas', 'pointGrid'],
-  Transform: ['transform', 'softTransform', 'crop', 'cleanup', 'edit'],
+  Transform: ['transform', 'softTransform', 'crop', 'cleanup', 'edit', 'attributes'],
   Draw: ['line', 'renderSVG'],
   Connect: ['connectNearby', 'merge'],
   Code: ['code'],
@@ -188,7 +188,8 @@ const nodeLabels = {
   connectNearby: 'Connect Nearby',
   merge: 'Merge',
   code: 'Code',
-  loop: 'Loop'
+  loop: 'Loop',
+  attributes: 'Attributes'
 };
 
 export default ContextMenu;
