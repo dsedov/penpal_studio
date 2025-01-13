@@ -14,6 +14,7 @@ import { ModificationsInput } from '../inputs/ModificationsInput';
 import LoopNode, { defaultData as loopDefaultData } from './LoopNode';
 import CloneNode, { defaultData as cloneDefaultData } from './CloneNode';
 import AttributesNode, { defaultData as attributesDefaultData } from './AttributesNode';
+import DuplicateNode, { defaultData as duplicateDefaultData } from './DuplicateNode';
 
 export const nodeTypes = {
   canvas: CanvasNode,
@@ -30,7 +31,8 @@ export const nodeTypes = {
   edit: EditNode,
   loop: LoopNode,
   clone: CloneNode,
-  attributes: AttributesNode
+  attributes: AttributesNode,
+  duplicate: DuplicateNode
 };
 
 export const defaultNodeData = {
@@ -48,7 +50,8 @@ export const defaultNodeData = {
   edit: editDefaultData,
   loop: loopDefaultData,
   clone: cloneDefaultData,
-  attributes: attributesDefaultData
+  attributes: attributesDefaultData,
+  duplicate: duplicateDefaultData
 };
 
 export const propertyChangeHandlers = {

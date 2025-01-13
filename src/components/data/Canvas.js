@@ -53,14 +53,11 @@ class Canvas {
      * @returns {number} id of the added point
      */
     point(x, y, attributes = {}) {
-        const id = this.points.length;
         this.points.push({
-            id,
             x,
             y,
-            attributes: { ...attributes }  // Create a copy of attributes
+            attributes: { ...attributes }
         });
-        return id;
     }
 
     /**
@@ -212,7 +209,6 @@ class Canvas {
         
         // Deep copy points with their attributes
         newCanvas.points = this.points.map(point => ({
-            id: point.id,
             x: point.x,
             y: point.y,
             attributes: { ...point.attributes }
@@ -220,7 +216,6 @@ class Canvas {
         
         // Deep copy lines
         newCanvas.lines = this.lines.map(line => ({
-            id: line.id,
             points: [...line.points],
             color: line.color,
             thickness: line.thickness
@@ -242,44 +237,33 @@ class Canvas {
 
         // Clone current canvas points and lines
         mergedCanvas.points = this.points.map(point => ({
-            id: point.id,
             x: point.x,
             y: point.y,
             attributes: { ...point.attributes }
         }));
 
         mergedCanvas.lines = this.lines.map(line => ({
-            id: line.id,
             points: [...line.points],
             color: line.color,
             thickness: line.thickness
         }));
 
-        // Find maximum IDs from current canvas
-        const maxPointId = Math.max(...this.points.map(p => p.id), -1);
-        const maxLineId = Math.max(...this.lines.map(l => l.id), -1);
+        // Store the original points length for offset calculation
+        const originalPointsLength = this.points.length;
 
-        // Create ID mapping for points from other canvas
-        const pointIdMap = new Map();
-
-        // Add points from other canvas with adjusted IDs
+        // Add points from other canvas (no need for IDs)
         otherCanvas.points.forEach(point => {
-            const newId = point.id + maxPointId + 1;
-            pointIdMap.set(point.id, newId);
-            
             mergedCanvas.points.push({
-                id: newId,
                 x: point.x,
                 y: point.y,
                 attributes: { ...point.attributes }
             });
         });
 
-        // Add lines from other canvas with adjusted point IDs and line IDs
+        // Add lines from other canvas with adjusted point indices
         otherCanvas.lines.forEach(line => {
             mergedCanvas.lines.push({
-                id: line.id + maxLineId + 1,
-                points: line.points.map(pointId => pointIdMap.get(pointId)),
+                points: line.points.map(pointId => pointId + originalPointsLength),
                 color: line.color,
                 thickness: line.thickness
             });
