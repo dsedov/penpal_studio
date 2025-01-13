@@ -83,7 +83,7 @@ const generateSVG = (canvas) => {
         svgContent += `    <line x1="${mmToPx(startPoint.x)}" y1="${mmToPx(startPoint.y)}" 
                              x2="${mmToPx(endPoint.x)}" y2="${mmToPx(endPoint.y)}"
                              stroke="${svgColor}"
-                             stroke-width="${mmToPx(line.thickness || 0.25)}"
+                             stroke-width="1.0"
                        />\n`;
       } else {
         // Handle polylines with multiple points
@@ -95,7 +95,7 @@ const generateSVG = (canvas) => {
         svgContent += `    <polyline points="${points}"
                              fill="none"
                              stroke="${svgColor}"
-                             stroke-width="${mmToPx(line.thickness || 0.25)}"
+                             stroke-width="1.0"
                        />\n`;
       }
     });
