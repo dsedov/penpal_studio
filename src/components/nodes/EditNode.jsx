@@ -1,29 +1,30 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React from 'react';
 import BaseNode from './BaseNode';
 import Canvas from '../data/Canvas';
-import P5Canvas from '../P5Canvas';
+
+// Define modification types
+export const ModificationType = {
+  MOVE_POINT: 'MOVE_POINT',
+  ADD_POINT: 'ADD_POINT',
+  DELETE_POINT: 'DELETE_POINT',
+  CREATE_LINE: 'CREATE_LINE',
+  DELETE_LINE: 'DELETE_LINE',
+  ADD_POINT_TO_LINE: 'ADD_POINT_TO_LINE',
+  REMOVE_POINT_FROM_LINE: 'REMOVE_POINT_FROM_LINE'
+};
 
 export const defaultData = {
   label: 'Edit',
   menu: {
     category: 'Operators',
     label: 'Edit',
-    description: 'Manually edit point positions and lines'
+    description: 'Edit canvas elements'
   },
   properties: {
     modifications: {
       label: 'Modifications',
       type: 'modifications',
-      value: new Map(),
-      internal: true
-    },
-    lineEdits: {
-      label: 'Line Edits',
-      type: 'internal',
-      value: {
-        selectedLine: null,
-        currentLine: [], // Array of point indices for new line creation
-      },
+      value: [], // Array of modifications
       internal: true
     }
   },
@@ -36,25 +37,32 @@ export const defaultData = {
 
       const canvas = inputCanvas.clone();
       
-      // Apply stored modifications
-      properties.modifications.value.forEach((mod, pointIndex) => {
-        if (canvas.points[pointIndex]) {
-          canvas.points[pointIndex] = {
-            ...canvas.points[pointIndex],
-            x: mod.newPos.x,
-            y: mod.newPos.y
-          };
+      // Apply modifications in order
+      properties.modifications.value.forEach(mod => {
+        if (!mod || !mod.type) return;
+
+        switch (mod.type) {
+          case ModificationType.MOVE_POINT:
+            if (canvas.points[mod.pointIndex]) {
+              canvas.points[mod.pointIndex] = {
+                ...canvas.points[mod.pointIndex],
+                x: mod.newPos.x,
+                y: mod.newPos.y
+              };
+            }
+            break;
+
+          case ModificationType.CREATE_LINE:
+            if (Array.isArray(mod.points) && mod.points.length >= 2) {
+              canvas.lines.push({
+                points: [...mod.points],
+                color: mod.color || '#000000',
+                thickness: mod.thickness || 2
+              });
+            }
+            break;
         }
       });
-
-      // Apply line edits if there are any
-      if (properties.lineEdits.value.currentLine?.length >= 2) {
-        canvas.lines.push({
-          points: [...properties.lineEdits.value.currentLine],
-          color: '#000000',
-          thickness: 2
-        });
-      }
 
       return { result: canvas, error: null };
     } catch (error) {

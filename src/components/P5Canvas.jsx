@@ -8,6 +8,7 @@ import { BsCircle } from 'react-icons/bs';
 import { BsPencil } from 'react-icons/bs';
 import { BsVectorPen } from 'react-icons/bs';
 import { BsArrowsMove } from 'react-icons/bs';
+import { ModificationType } from './nodes/EditNode';
 
 const P5Canvas = ({ 
   computedData, 
@@ -325,26 +326,26 @@ const P5Canvas = ({
         const pointIndex = findPointUnderMouse(p5, points);
 
         if (pointIndex !== -1) {
-          // If we clicked on a point
           if (currentLine.includes(pointIndex)) {
-            // If point is already in line, remove it
             setCurrentLine(prev => prev.filter(i => i !== pointIndex));
           } else {
-            // Add point to line
             const newLine = [...currentLine, pointIndex];
             setCurrentLine(newLine);
             
-            // If we have 2 or more points, create the line
             if (newLine.length >= 2) {
-              onLineEdit?.(newLine); // Pass the entire line array instead of just the point
-              // Clear current line after creating it
+              const modification = {
+                type: ModificationType.CREATE_LINE,
+                points: newLine,
+                color: '#000000',
+                thickness: 2
+              };
+
+              onLineEdit?.(modification);
               setCurrentLine([]);
             }
           }
         } else {
-          // If we clicked empty space, clear current line
           setCurrentLine([]);
-          onLineSelect?.(null);
         }
       }
     } else if (currentMode === 'pan') {
@@ -358,24 +359,25 @@ const P5Canvas = ({
 
     if (isEditMode) {
       if (currentEditType === 'move' && draggedPoint) {
-        // Check if we have valid data before proceeding
-        if (!computedData?.result?.result?.points) {
-          console.log('No valid points data available');
-          setDraggedPoint(null);
-          return;
-        }
-        
-        // Convert screen coordinates to world coordinates
         const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
-        console.log('Drag to:', worldPos);
+        
+        const modification = {
+          type: ModificationType.MOVE_POINT,
+          pointIndex: draggedPoint.index,
+          originalPos: { 
+            x: Number(draggedPoint.originalPos.x),
+            y: Number(draggedPoint.originalPos.y)
+          },
+          newPos: { 
+            x: Number(worldPos.x),
+            y: Number(worldPos.y)
+          }
+        };
 
-        // Call the point move handler with the new position
-        onPointMove?.(draggedPoint.index, {
-          originalPos: draggedPoint.originalPos,
-          newPos: { x: worldPos.x, y: worldPos.y }
-        });
+        console.log('P5Canvas creating modification:', modification);
+        onPointMove?.(modification);
 
-        // Update the computedData directly for immediate visual feedback
+        // Update visual feedback
         if (computedData?.result?.result?.points) {
           computedData.result.result.points[draggedPoint.index] = {
             ...computedData.result.result.points[draggedPoint.index],

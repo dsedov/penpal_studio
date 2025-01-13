@@ -205,18 +205,47 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleDuplicateNode]);
 
-  // Add handler for point movement
-  const handlePointMove = useCallback((pointIndex, modification) => {
-    console.log('Moving point:', pointIndex, modification);
+  // Update handler for point movement
+  const handlePointMove = useCallback((modification) => {
+    console.log('Applying modification:', modification);
     if (!selectedNodeId) return;
 
     setNodes(nodes => nodes.map(node => {
       if (node.id !== selectedNodeId) return node;
 
-      // Create a new Map if it doesn't exist
-      const currentMods = node.data.properties.modifications.value || new Map();
-      const newMods = new Map(currentMods);
-      newMods.set(pointIndex, modification);
+      // Get current modifications array or initialize empty
+      const currentMods = Array.isArray(node.data.properties.modifications.value) 
+        ? node.data.properties.modifications.value 
+        : [];
+
+      // Add new modification to the array
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          properties: {
+            ...node.data.properties,
+            modifications: {
+              ...node.data.properties.modifications,
+              value: [...currentMods, modification]
+            }
+          }
+        }
+      };
+    }));
+  }, [selectedNodeId]);
+
+  // Add this new handler
+  const handleLineEdit = useCallback((modification) => {
+    console.log('Applying line modification:', modification);
+    if (!selectedNodeId) return;
+
+    setNodes(nodes => nodes.map(node => {
+      if (node.id !== selectedNodeId) return node;
+
+      const currentMods = Array.isArray(node.data.properties.modifications.value) 
+        ? node.data.properties.modifications.value 
+        : [];
 
       return {
         ...node,
@@ -226,7 +255,7 @@ function App() {
             ...node.data.properties,
             modifications: {
               ...node.data.properties.modifications,
-              value: newMods
+              value: [...currentMods, modification]
             }
           }
         }
@@ -278,6 +307,7 @@ function App() {
               onLiveUpdateToggle={setLiveUpdate}
               editMode={editMode}
               onPointMove={handlePointMove}
+              onLineEdit={handleLineEdit}
               selectedNodeId={selectedNodeId}
               showEditButton={selectedNode?.type === 'edit'}
             />
