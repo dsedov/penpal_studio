@@ -10,6 +10,7 @@ import { BsVectorPen } from 'react-icons/bs';
 import { BsArrowsMove } from 'react-icons/bs';
 import { BsPlus } from 'react-icons/bs';
 import { ModificationType } from './nodes/EditNode';
+import { BsGrid3X3Gap } from 'react-icons/bs';
 
 const P5Canvas = ({ 
   computedData, 
@@ -46,8 +47,18 @@ const P5Canvas = ({
   const [currentLine, setCurrentLine] = useState([]);
   const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
   const [creatingPoint, setCreatingPoint] = useState(null);
+  const [gridSnap, setGridSnap] = useState(0);
+  const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
 
   const isEditMode = currentMode === 'edit';
+
+  const gridSnapOptions = [
+    { value: 0, label: 'None' },
+    { value: 0.1, label: '0.1mm' },
+    { value: 1.0, label: '1.0mm' },
+    { value: 5.0, label: '5.0mm' },
+    { value: 10.0, label: '10.0mm' },
+  ];
 
   useEffect(() => {
     viewportRef.current = viewport;
@@ -292,6 +303,11 @@ const P5Canvas = ({
     setHoveredPointIndex(pointIndex);
   };
 
+  const snapToGrid = (value, snapSize) => {
+    if (!snapSize) return value;
+    return Math.round(value / snapSize) * snapSize;
+  };
+
   const mousePressed = (p5) => {
     if (!isMouseOver.current) return;
     
@@ -306,6 +322,12 @@ const P5Canvas = ({
         const points = computedData?.result?.result?.points || [];
         const pointIndex = findPointUnderMouse(p5, points);
         const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+        
+        // Snap the world position to grid
+        const snappedPos = {
+          x: snapToGrid(worldPos.x, gridSnap),
+          y: snapToGrid(worldPos.y, gridSnap)
+        };
 
         if (pointIndex !== -1) {
           // If we clicked on existing point, prepare to move it
@@ -318,16 +340,16 @@ const P5Canvas = ({
           // Check if we're too close to any existing point
           const tooClose = points.some(point => {
             if (!point) return false;
-            const dx = point.x - worldPos.x;
-            const dy = point.y - worldPos.y;
+            const dx = point.x - snappedPos.x;
+            const dy = point.y - snappedPos.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
             return dist < (20 / viewport.zoom); // Minimum distance between points
           });
 
           if (!tooClose) {
-            // Start creating new point
+            // Start creating new point with snapped position
             setCreatingPoint({
-              position: worldPos,
+              position: snappedPos,
               isDragging: false
             });
           }
@@ -433,6 +455,12 @@ const P5Canvas = ({
 
       if (currentEditType === 'point') {
         if (draggedPoint) {
+          // Snap the world position to grid
+          const snappedPos = {
+            x: snapToGrid(worldPos.x, gridSnap),
+            y: snapToGrid(worldPos.y, gridSnap)
+          };
+
           // Move existing point
           const modification = {
             type: ModificationType.MOVE_POINT,
@@ -442,8 +470,8 @@ const P5Canvas = ({
               y: Number(draggedPoint.originalPos.y)
             },
             newPos: { 
-              x: Number(worldPos.x),
-              y: Number(worldPos.y)
+              x: Number(snappedPos.x),
+              y: Number(snappedPos.y)
             }
           };
           onPointMove?.(modification);
@@ -452,19 +480,26 @@ const P5Canvas = ({
           if (computedData?.result?.result?.points) {
             computedData.result.result.points[draggedPoint.index] = {
               ...computedData.result.result.points[draggedPoint.index],
-              x: worldPos.x,
-              y: worldPos.y
+              x: snappedPos.x,
+              y: snappedPos.y
             };
           }
         } else if (creatingPoint) {
-          // Update position of point being created
+          // Update position of point being created with snapping
           setCreatingPoint({
-            position: worldPos,
+            position: {
+              x: snapToGrid(worldPos.x, gridSnap),
+              y: snapToGrid(worldPos.y, gridSnap)
+            },
             isDragging: true
           });
         }
       } else if (currentEditType === 'move' && draggedPoint) {
-        const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+        // Snap the world position to grid
+        const snappedPos = {
+          x: snapToGrid(worldPos.x, gridSnap),
+          y: snapToGrid(worldPos.y, gridSnap)
+        };
         
         const modification = {
           type: ModificationType.MOVE_POINT,
@@ -474,20 +509,19 @@ const P5Canvas = ({
             y: Number(draggedPoint.originalPos.y)
           },
           newPos: { 
-            x: Number(worldPos.x),
-            y: Number(worldPos.y)
+            x: Number(snappedPos.x),
+            y: Number(snappedPos.y)
           }
         };
 
-        console.log('P5Canvas creating modification:', modification);
         onPointMove?.(modification);
 
         // Update visual feedback
         if (computedData?.result?.result?.points) {
           computedData.result.result.points[draggedPoint.index] = {
             ...computedData.result.result.points[draggedPoint.index],
-            x: worldPos.x,
-            y: worldPos.y
+            x: snappedPos.x,
+            y: snappedPos.y
           };
         }
       }
@@ -732,6 +766,14 @@ const P5Canvas = ({
     return () => resizeObserver.disconnect();
   }, []);
 
+  const createModification = (type, data) => {
+    return {
+      ...data,
+      type,
+      gridSnap
+    };
+  };
+
   return (
     <div className="relative w-full h-full flex">
       {/* Left toolbar */}
@@ -805,6 +847,41 @@ const P5Canvas = ({
           onClick={() => onShowPointsChange(!showPoints)}
           title="Toggle Points Visibility"
         />
+        <div className="relative">
+          <button
+            className="p-2 rounded bg-white shadow hover:bg-gray-100"
+            onClick={() => setIsGridMenuOpen(!isGridMenuOpen)}
+          >
+            <BsGrid3X3Gap 
+              className={`w-5 h-5 ${
+                gridSnap === 0 
+                  ? 'text-gray-400' // Grey when no snap
+                  : 'text-green-500' // Green when snap is active
+              }`}
+            />
+          </button>
+          
+          {isGridMenuOpen && (
+            <div 
+              className="absolute right-0 mt-1 bg-white rounded shadow-lg p-1 z-50"
+              onMouseLeave={() => setIsGridMenuOpen(false)}
+            >
+              {gridSnapOptions.map((option) => (
+                <button
+                  key={option.value}
+                  className={`w-full text-left px-4 py-2 text-sm rounded hover:bg-gray-100 
+                    ${gridSnap === option.value ? 'bg-blue-50' : ''}`}
+                  onClick={() => {
+                    setGridSnap(option.value);
+                    setIsGridMenuOpen(false);
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div 
