@@ -115,6 +115,10 @@ const EditNode = (props) => {
       outputs={[
         { id: 'output', label: 'Output' }
       ]}
+      onPropertyChange={(property, value) => {
+        props.data.properties[property].value = value;
+        props.onChange?.(props.data);
+      }}
     />
   );
 };
