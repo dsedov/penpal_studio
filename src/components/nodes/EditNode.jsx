@@ -52,6 +52,13 @@ export const defaultData = {
             }
             break;
 
+          case ModificationType.ADD_POINT:
+            canvas.points.push({
+              x: mod.position.x,
+              y: mod.position.y
+            });
+            break;
+
           case ModificationType.CREATE_LINE:
             if (Array.isArray(mod.points) && mod.points.length >= 2) {
               canvas.lines.push({
@@ -59,6 +66,33 @@ export const defaultData = {
                 color: mod.color || '#000000',
                 thickness: mod.thickness || 2
               });
+            }
+            break;
+
+          case ModificationType.DELETE_POINT:
+            if (canvas.points[mod.pointIndex]) {
+              // Create a mapping of old indices to new ones
+              const indexMap = new Map();
+              let newIndex = 0;
+              
+              // Create new points array without the deleted point
+              canvas.points = canvas.points.reduce((newPoints, point, oldIndex) => {
+                if (oldIndex === mod.pointIndex) {
+                  indexMap.set(oldIndex, -1); // Mark deleted point
+                  return newPoints;
+                }
+                indexMap.set(oldIndex, newIndex);
+                newIndex++;
+                return [...newPoints, point];
+              }, []);
+
+              // Update all line references to use new point indices
+              canvas.lines = canvas.lines.map(line => ({
+                ...line,
+                points: line.points
+                  .map(p => indexMap.get(p))
+                  .filter(p => p !== -1)
+              })).filter(line => line.points.length >= 2);
             }
             break;
         }

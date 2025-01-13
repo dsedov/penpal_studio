@@ -12,6 +12,7 @@ import { computeGraph } from './lib/nodeComputation';
 import { saveProjectToFile, loadProjectFromFile } from './lib/fileOperations';
 import { defaultNodeData } from './components/nodes/nodeTypes';
 import { nanoid } from 'nanoid';
+import { ModificationType } from './components/nodes/EditNode';
 
 function App() {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
@@ -207,18 +208,44 @@ function App() {
 
   // Update handler for point movement
   const handlePointMove = useCallback((modification) => {
-    console.log('Applying modification:', modification);
     if (!selectedNodeId) return;
 
     setNodes(nodes => nodes.map(node => {
       if (node.id !== selectedNodeId) return node;
 
-      // Get current modifications array or initialize empty
       const currentMods = Array.isArray(node.data.properties.modifications.value) 
         ? node.data.properties.modifications.value 
         : [];
 
-      // Add new modification to the array
+      // Find if we already have a move modification for this point
+      const existingMoveIndex = currentMods.findIndex(mod => 
+        mod.type === ModificationType.MOVE_POINT && 
+        mod.pointIndex === modification.pointIndex
+      );
+
+      if (existingMoveIndex !== -1) {
+        // Update existing move with new destination but keep original starting position
+        const updatedMods = [...currentMods];
+        updatedMods[existingMoveIndex] = {
+          ...modification,
+          originalPos: currentMods[existingMoveIndex].originalPos
+        };
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            properties: {
+              ...node.data.properties,
+              modifications: {
+                ...node.data.properties.modifications,
+                value: updatedMods
+              }
+            }
+          }
+        };
+      }
+
+      // If no existing move for this point, add new modification
       return {
         ...node,
         data: {
@@ -286,6 +313,77 @@ function App() {
     }
   }, [selectedNodeId, nodes, edges]);
 
+  // Add new handler
+  const handlePointEdit = useCallback((modification) => {
+    if (!selectedNodeId) return;
+
+    setNodes(nodes => nodes.map(node => {
+      if (node.id !== selectedNodeId) return node;
+
+      const currentMods = Array.isArray(node.data.properties.modifications.value) 
+        ? node.data.properties.modifications.value 
+        : [];
+
+      if (modification.type === ModificationType.DELETE_POINT) {
+        // Find if this point was created in this EditNode
+        const pointCreationIndex = currentMods.findIndex(mod => 
+          mod.type === ModificationType.ADD_POINT && 
+          currentMods.indexOf(mod) < currentMods.findIndex(m => 
+            m.type === ModificationType.CREATE_LINE && 
+            m.points.includes(modification.pointIndex)
+          )
+        );
+
+        if (pointCreationIndex !== -1) {
+          // If point was created here, remove its creation mod and update line mods
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              properties: {
+                ...node.data.properties,
+                modifications: {
+                  ...node.data.properties.modifications,
+                  value: currentMods
+                    .filter((mod, index) => index !== pointCreationIndex) // Remove point creation
+                    .map(mod => {
+                      if (mod.type === ModificationType.CREATE_LINE) {
+                        // Update line points to remove deleted point
+                        return {
+                          ...mod,
+                          points: mod.points.filter(p => p !== modification.pointIndex)
+                        };
+                      }
+                      return mod;
+                    })
+                    .filter(mod => 
+                      mod.type !== ModificationType.CREATE_LINE || 
+                      mod.points.length >= 2
+                    ) // Remove invalid lines
+                }
+              }
+            }
+          };
+        }
+      }
+
+      // For other modifications (including deleting points from other nodes)
+      return {
+        ...node,
+        data: {
+          ...node.data,
+          properties: {
+            ...node.data.properties,
+            modifications: {
+              ...node.data.properties.modifications,
+              value: [...currentMods, modification]
+            }
+          }
+        }
+      };
+    }));
+  }, [selectedNodeId]);
+
   return (
     <div className="h-screen w-screen flex flex-col dark">
       <MenuBar 
@@ -310,6 +408,7 @@ function App() {
               onLineEdit={handleLineEdit}
               selectedNodeId={selectedNodeId}
               showEditButton={selectedNode?.type === 'edit'}
+              onPointEdit={handlePointEdit}
             />
           </Allotment.Pane>
           <Allotment.Pane minSize={200}>

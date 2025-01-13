@@ -8,6 +8,7 @@ import { BsCircle } from 'react-icons/bs';
 import { BsPencil } from 'react-icons/bs';
 import { BsVectorPen } from 'react-icons/bs';
 import { BsArrowsMove } from 'react-icons/bs';
+import { BsPlus } from 'react-icons/bs';
 import { ModificationType } from './nodes/EditNode';
 
 const P5Canvas = ({ 
@@ -22,6 +23,7 @@ const P5Canvas = ({
   onLiveUpdateToggle = () => {},
   editMode = false,
   onPointMove = null,
+  onPointEdit = null,
   selectedNodeId = null,
   showEditButton = false,
   editType = 'move',
@@ -43,6 +45,7 @@ const P5Canvas = ({
   const [currentEditType, setCurrentEditType] = useState('move');
   const [currentLine, setCurrentLine] = useState([]);
   const [hoveredPointIndex, setHoveredPointIndex] = useState(null);
+  const [creatingPoint, setCreatingPoint] = useState(null);
 
   const isEditMode = currentMode === 'edit';
 
@@ -223,6 +226,20 @@ const P5Canvas = ({
       });
       p5.pop();
     }
+
+    // Draw point being created
+    if (isEditMode && currentEditType === 'point' && creatingPoint) {
+      p5.push();
+      p5.stroke(255, 165, 0);
+      p5.strokeWeight(2 / viewport.zoom);
+      p5.fill(255, 165, 0, 200);
+      p5.circle(
+        creatingPoint.position.x,
+        creatingPoint.position.y,
+        8 / viewport.zoom
+      );
+      p5.pop();
+    }
   };
 
   const mouseEntered = () => {
@@ -278,8 +295,44 @@ const P5Canvas = ({
   const mousePressed = (p5) => {
     if (!isMouseOver.current) return;
     
+    console.log('Mouse pressed:', { 
+      isEditMode, 
+      currentEditType, 
+      currentMode 
+    });
+
     if (isEditMode) {
-      if (currentEditType === 'move') {
+      if (currentEditType === 'point') {
+        const points = computedData?.result?.result?.points || [];
+        const pointIndex = findPointUnderMouse(p5, points);
+        const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+
+        if (pointIndex !== -1) {
+          // If we clicked on existing point, prepare to move it
+          const point = points[pointIndex];
+          setDraggedPoint({
+            index: pointIndex,
+            originalPos: { x: point.x, y: point.y }
+          });
+        } else {
+          // Check if we're too close to any existing point
+          const tooClose = points.some(point => {
+            if (!point) return false;
+            const dx = point.x - worldPos.x;
+            const dy = point.y - worldPos.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            return dist < (20 / viewport.zoom); // Minimum distance between points
+          });
+
+          if (!tooClose) {
+            // Start creating new point
+            setCreatingPoint({
+              position: worldPos,
+              isDragging: false
+            });
+          }
+        }
+      } else if (currentEditType === 'move') {
         // Check if we have valid data before proceeding
         if (!computedData?.result?.result?.points) {
           console.log('No valid points data available');
@@ -327,24 +380,42 @@ const P5Canvas = ({
 
         if (pointIndex !== -1) {
           if (currentLine.includes(pointIndex)) {
-            setCurrentLine(prev => prev.filter(i => i !== pointIndex));
+            // If we click the same point twice, complete the line
+            if (currentLine[currentLine.length - 1] === pointIndex) {
+              if (currentLine.length >= 2) {
+                // Create the line modification
+                const modification = {
+                  type: ModificationType.CREATE_LINE,
+                  points: [...currentLine],
+                  color: '#000000',
+                  thickness: 2
+                };
+                onLineEdit?.(modification);
+              }
+              // Clear current line to start fresh
+              setCurrentLine([]);
+            } else {
+              // If it's a point we used earlier in the line (but not the last point),
+              // ignore it to prevent loops
+              return;
+            }
           } else {
-            const newLine = [...currentLine, pointIndex];
-            setCurrentLine(newLine);
+            // Add point to the current line
+            setCurrentLine(prev => [...prev, pointIndex]);
             
-            if (newLine.length >= 2) {
+            // If this is our first two points, create an initial line
+            if (currentLine.length === 1) {
               const modification = {
                 type: ModificationType.CREATE_LINE,
-                points: newLine,
+                points: [...currentLine, pointIndex],
                 color: '#000000',
                 thickness: 2
               };
-
               onLineEdit?.(modification);
-              setCurrentLine([]);
             }
           }
         } else {
+          // If we click empty space, clear the current line
           setCurrentLine([]);
         }
       }
@@ -358,7 +429,41 @@ const P5Canvas = ({
     if (!isMouseOver.current) return;
 
     if (isEditMode) {
-      if (currentEditType === 'move' && draggedPoint) {
+      const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
+
+      if (currentEditType === 'point') {
+        if (draggedPoint) {
+          // Move existing point
+          const modification = {
+            type: ModificationType.MOVE_POINT,
+            pointIndex: draggedPoint.index,
+            originalPos: { 
+              x: Number(draggedPoint.originalPos.x),
+              y: Number(draggedPoint.originalPos.y)
+            },
+            newPos: { 
+              x: Number(worldPos.x),
+              y: Number(worldPos.y)
+            }
+          };
+          onPointMove?.(modification);
+
+          // Update visual feedback
+          if (computedData?.result?.result?.points) {
+            computedData.result.result.points[draggedPoint.index] = {
+              ...computedData.result.result.points[draggedPoint.index],
+              x: worldPos.x,
+              y: worldPos.y
+            };
+          }
+        } else if (creatingPoint) {
+          // Update position of point being created
+          setCreatingPoint({
+            position: worldPos,
+            isDragging: true
+          });
+        }
+      } else if (currentEditType === 'move' && draggedPoint) {
         const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
         
         const modification = {
@@ -396,7 +501,17 @@ const P5Canvas = ({
     }
   };
 
-  const mouseReleased = () => {
+  const mouseReleased = (p5) => {
+    if (creatingPoint) {
+      // Create the point at final position
+      const modification = {
+        type: ModificationType.ADD_POINT,
+        position: creatingPoint.position
+      };
+      onPointEdit?.(modification);
+      setCreatingPoint(null);
+    }
+    
     if (draggedPoint) {
       setDraggedPoint(null);
     }
@@ -566,6 +681,9 @@ const P5Canvas = ({
     } else if ((p5.key === 'l' || p5.key === 'L') && showEditButton) {
       setCurrentMode('edit');
       setCurrentEditType('line');
+    } else if ((p5.key === 'p' || p5.key === 'P') && showEditButton) {
+      setCurrentMode('edit');
+      setCurrentEditType('point');
     }
   };
 
@@ -576,6 +694,22 @@ const P5Canvas = ({
     if (p5.key === ' ') {
       isSpacePressed.current = false;
       isPanning.current = false;
+    }
+  };
+
+  const doubleClicked = (p5) => {
+    if (!isMouseOver.current || !isEditMode || currentEditType !== 'point') return;
+
+    const points = computedData?.result?.result?.points || [];
+    const pointIndex = findPointUnderMouse(p5, points);
+
+    if (pointIndex !== -1) {
+      const modification = {
+        type: ModificationType.DELETE_POINT,
+        pointIndex: pointIndex
+      };
+
+      onPointEdit?.(modification);
     }
   };
 
@@ -642,6 +776,16 @@ const P5Canvas = ({
               }}
               title="Edit Lines (L)"
             />
+            <ToolbarButton
+              icon={<BsPlus size={20} />}
+              active={isEditMode && currentEditType === 'point'}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentMode('edit');
+                setCurrentEditType('point');
+              }}
+              title="Add Points (P)"
+            />
           </>
         )}
       </div>
@@ -679,6 +823,7 @@ const P5Canvas = ({
           mouseDragged={mouseDragged}
           mouseReleased={mouseReleased}
           mouseMoved={mouseMoved}
+          doubleClicked={doubleClicked}
         />
       </div>
     </div>
