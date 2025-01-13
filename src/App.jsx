@@ -28,6 +28,7 @@ function App() {
   const [editMode, setEditMode] = useState(false);
   const [currentMode, setCurrentMode] = useState('pan');
   const [currentEditType, setCurrentEditType] = useState(null);
+  const [defaultLineColor, setDefaultLineColor] = useState('#000000');
 
   // Handle computation results
   const handleComputeResults = useCallback((results) => {
@@ -305,6 +306,12 @@ function App() {
         ? node.data.properties.modifications.value 
         : [];
 
+      // Add default color to the modification if not specified
+      const modificationWithColor = {
+        ...modification,
+        color: modification.color || defaultLineColor
+      };
+
       return {
         ...node,
         data: {
@@ -313,13 +320,13 @@ function App() {
             ...node.data.properties,
             modifications: {
               ...node.data.properties.modifications,
-              value: [...currentMods, modification]
+              value: [...currentMods, modificationWithColor]
             }
           }
         }
       };
     }));
-  }, [selectedNodeId]);
+  }, [selectedNodeId, defaultLineColor]);
 
   // Update canvas mode handler
   const handleCanvasModeChange = useCallback((mode) => {
@@ -422,6 +429,8 @@ function App() {
               selectedNodeId={selectedNodeId}
               showEditButton={selectedNode?.type === 'edit'}
               onPointEdit={handlePointEdit}
+              defaultLineColor={defaultLineColor}
+              onDefaultLineColorChange={setDefaultLineColor}
             />
           </Allotment.Pane>
           <Allotment.Pane minSize={200}>

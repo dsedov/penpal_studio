@@ -1,7 +1,7 @@
 import React from 'react';
 import { ModificationType } from '../nodes/EditNode';
 
-const ModificationDetails = ({ mod }) => {
+const ModificationDetails = ({ mod, onChange }) => {
   switch (mod.type) {
     case ModificationType.MOVE_POINT:
       return (
@@ -23,10 +23,20 @@ const ModificationDetails = ({ mod }) => {
       );
     case ModificationType.CREATE_LINE:
       return (
-        <div className="text-xs text-gray-600">
-          Points: [{mod.points.join(', ')}] 
-          {mod.color && <span className="ml-1">Color: {mod.color}</span>}
-          {mod.thickness && <span className="ml-1">Width: {mod.thickness}</span>}
+        <div className="text-xs text-gray-600 space-y-1">
+          <div>Points: [{mod.points.join(', ')}]</div>
+          <div className="flex items-center gap-2">
+            <span>Color:</span>
+            <input
+              type="color"
+              value={mod.color || '#000000'}
+              onChange={(e) => {
+                onChange({ ...mod, color: e.target.value });
+              }}
+              className="w-6 h-6 p-0 border-0"
+            />
+            <span className="ml-1">Width: {mod.thickness}</span>
+          </div>
         </div>
       );
     default:
@@ -40,6 +50,12 @@ export const ModificationsInput = ({ value, label, onChange }) => {
   const handleDelete = (index) => {
     const newModifications = [...modifications];
     newModifications.splice(index, 1);
+    onChange?.(newModifications);
+  };
+
+  const handleModificationChange = (index, updatedMod) => {
+    const newModifications = [...modifications];
+    newModifications[index] = updatedMod;
     onChange?.(newModifications);
   };
 
@@ -62,7 +78,10 @@ export const ModificationsInput = ({ value, label, onChange }) => {
                       word.charAt(0) + word.slice(1).toLowerCase()
                     ).join(' ')}
                   </div>
-                  <ModificationDetails mod={mod} />
+                  <ModificationDetails 
+                    mod={mod} 
+                    onChange={(updatedMod) => handleModificationChange(index, updatedMod)}
+                  />
                 </div>
                 <button
                   onClick={() => handleDelete(index)}

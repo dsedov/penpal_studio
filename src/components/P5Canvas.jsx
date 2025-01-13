@@ -31,7 +31,9 @@ const P5Canvas = ({
   onEditTypeChange = () => {},
   onLineEdit = null,
   selectedLine = null,
-  onLineSelect = null
+  onLineSelect = null,
+  defaultLineColor = '#000000',
+  onDefaultLineColorChange = () => {}
 }) => {
   const containerRef = useRef(null);
   const viewportRef = useRef(viewport);
@@ -49,6 +51,7 @@ const P5Canvas = ({
   const [creatingPoint, setCreatingPoint] = useState(null);
   const [gridSnap, setGridSnap] = useState(0);
   const [isGridMenuOpen, setIsGridMenuOpen] = useState(false);
+  const [isColorPickerOpen, setIsColorPickerOpen] = useState(false);
 
   const isEditMode = currentMode === 'edit';
 
@@ -399,46 +402,33 @@ const P5Canvas = ({
       } else if (currentEditType === 'line') {
         const points = computedData?.result?.result?.points || [];
         const pointIndex = findPointUnderMouse(p5, points);
+        const worldPos = screenToWorld(p5, p5.mouseX, p5.mouseY);
 
         if (pointIndex !== -1) {
           if (currentLine.includes(pointIndex)) {
-            // If we click the same point twice, complete the line
-            if (currentLine[currentLine.length - 1] === pointIndex) {
-              if (currentLine.length >= 2) {
-                // Create the line modification
-                const modification = {
-                  type: ModificationType.CREATE_LINE,
-                  points: [...currentLine],
-                  color: '#000000',
-                  thickness: 2
-                };
-                onLineEdit?.(modification);
-              }
-              // Clear current line to start fresh
-              setCurrentLine([]);
-            } else {
-              // If it's a point we used earlier in the line (but not the last point),
-              // ignore it to prevent loops
-              return;
-            }
+            // If it's a point we used earlier in the line, ignore it to prevent loops
+            return;
           } else {
-            // Add point to the current line
+            // Just add existing point to the current line
             setCurrentLine(prev => [...prev, pointIndex]);
-            
-            // If this is our first two points, create an initial line
-            if (currentLine.length === 1) {
-              const modification = {
-                type: ModificationType.CREATE_LINE,
-                points: [...currentLine, pointIndex],
-                color: '#000000',
-                thickness: 2
-              };
-              onLineEdit?.(modification);
-            }
           }
         } else {
-          // If we click empty space, clear the current line
-          setCurrentLine([]);
+          // Click on empty space - create a new point
+          const snappedPos = {
+            x: snapToGrid(worldPos.x, gridSnap),
+            y: snapToGrid(worldPos.y, gridSnap)
+          };
+
+          // Create new point
+          const pointModification = {
+            type: ModificationType.ADD_POINT,
+            position: snappedPos
+          };
+          onPointEdit?.(pointModification);
+
+          // Add the new point index to the line
+          const newPointIndex = (computedData?.result?.result?.points?.length || 0);
+          setCurrentLine(prev => [...prev, newPointIndex]);
         }
       }
     } else if (currentMode === 'pan') {
@@ -573,7 +563,7 @@ const P5Canvas = ({
       y: (p5.height/2) / viewport.zoom - viewport.y
     };
 
-    // Draw grid
+    // Draw regular background grid
     const gridSize = 20;
     p5.stroke(220);
     p5.strokeWeight(1 / viewport.zoom);
@@ -623,39 +613,50 @@ const P5Canvas = ({
     // Draw the canvas data
     drawCanvas(p5, viewport, topLeft, bottomRight);
 
-    // Draw points in edit mode - MOVE THIS INSIDE THE TRANSFORMED COORDINATE SYSTEM
-    if (isEditMode && computedData?.result?.result?.points) {
-      // Only draw edit points if we have valid data
-      computedData.result.result.points.forEach((point, index) => {
-        if (!point) return;
-        
-        const isSelected = index === selectedPointIndex;
-        const isDragged = draggedPoint && draggedPoint.index === index;
-        
-        // Draw highlight stroke for selected/dragged points
-        if (isSelected || isDragged) {
-          p5.stroke(0);
-          p5.strokeWeight(2 / viewport.zoom);
-        } else {
+    // Draw snap grid if enabled and zoomed in enough - NOW AFTER EVERYTHING ELSE
+    if (gridSnap > 0 && viewport.zoom > 0.05) { // Lower threshold to see finer grids
+      // Calculate the number of snap points that would be drawn
+      const snapPointsX = Math.ceil((endX - startX) / gridSnap);
+      const snapPointsY = Math.ceil((endY - startY) / gridSnap);
+      const totalSnapPoints = snapPointsX * snapPointsY;
+
+      // Only draw if we're not trying to render too many points
+      if (totalSnapPoints < 10000) {
+        // Calculate snap grid boundaries
+        const snapStartX = Math.floor(topLeft.x / gridSnap) * gridSnap;
+        const snapEndX = Math.ceil(bottomRight.x / gridSnap) * gridSnap;
+        const snapStartY = Math.floor(topLeft.y / gridSnap) * gridSnap;
+        const snapEndY = Math.ceil(bottomRight.y / gridSnap) * gridSnap;
+
+        // Draw grid lines with increased opacity
+        p5.stroke(128, 128, 128, 150); // Keep increased opacity for better visibility
+        p5.strokeWeight(1 / viewport.zoom); // Back to original thickness
+
+        // Draw vertical snap lines
+        for (let x = snapStartX; x <= snapEndX; x += gridSnap) {
+          p5.line(x, topLeft.y, x, bottomRight.y);
+        }
+
+        // Draw horizontal snap lines
+        for (let y = snapStartY; y <= snapEndY; y += gridSnap) {
+          p5.line(topLeft.x, y, bottomRight.x, y);
+        }
+
+        // Only draw dots if we're zoomed in significantly
+        if (viewport.zoom > 0.3) { // Lower threshold for dots too
           p5.noStroke();
+          p5.fill(128, 128, 128, 150);
+          for (let x = snapStartX; x <= snapEndX; x += gridSnap) {
+            for (let y = snapStartY; y <= snapEndY; y += gridSnap) {
+              p5.circle(x, y, 2 / viewport.zoom); // Back to original size
+            }
+          }
         }
-
-        // Fill color based on state
-        if (isDragged) {
-          p5.fill(255, 165, 0); // Orange for dragged point
-        } else if (isSelected) {
-          p5.fill(255, 255, 0); // Yellow for selected point
-        } else {
-          p5.fill(200, 200, 0); // Darker yellow for other points
-        }
-
-        const size = (isDragged || isSelected) ? 8 / viewport.zoom : 6 / viewport.zoom;
-        p5.circle(point.x, point.y, size);
-      });
+      }
     }
 
     p5.pop();
-
+    
     // Handle panning - add editMode check
     if (currentMode === 'pan' && !isEditMode && isMouseOver.current && p5.mouseIsPressed && p5.mouseButton === p5.LEFT) {
       if (!isPanning.current) {
@@ -688,7 +689,7 @@ const P5Canvas = ({
     
     const oldZoom = viewport.zoom;
     viewport.zoom *= Math.exp(-event.delta * 0.001);
-    viewport.zoom = p5.constrain(viewport.zoom, 0.01, 10);
+    viewport.zoom = p5.constrain(viewport.zoom, 0.5, 50);
     
     const dx = mx / viewport.zoom - mx / oldZoom;
     const dy = my / viewport.zoom - my / oldZoom;
@@ -732,18 +733,33 @@ const P5Canvas = ({
   };
 
   const doubleClicked = (p5) => {
-    if (!isMouseOver.current || !isEditMode || currentEditType !== 'point') return;
+    if (!isMouseOver.current || !isEditMode) return;
+    
+    if (currentEditType === 'point') {
+      // Existing point deletion code...
+      const points = computedData?.result?.result?.points || [];
+      const pointIndex = findPointUnderMouse(p5, points);
 
-    const points = computedData?.result?.result?.points || [];
-    const pointIndex = findPointUnderMouse(p5, points);
-
-    if (pointIndex !== -1) {
-      const modification = {
-        type: ModificationType.DELETE_POINT,
-        pointIndex: pointIndex
-      };
-
-      onPointEdit?.(modification);
+      if (pointIndex !== -1) {
+        const modification = {
+          type: ModificationType.DELETE_POINT,
+          pointIndex: pointIndex
+        };
+        onPointEdit?.(modification);
+      }
+    } else if (currentEditType === 'line') {
+      // Only create line if we have at least 2 points
+      if (currentLine.length >= 2) {
+        const modification = {
+          type: ModificationType.CREATE_LINE,
+          points: [...currentLine],
+          color: defaultLineColor,  // Use the default color from props
+          thickness: 2
+        };
+        onLineEdit?.(modification);
+      }
+      // Clear current line
+      setCurrentLine([]);
     }
   };
 
@@ -855,8 +871,8 @@ const P5Canvas = ({
             <BsGrid3X3Gap 
               className={`w-5 h-5 ${
                 gridSnap === 0 
-                  ? 'text-gray-400' // Grey when no snap
-                  : 'text-green-500' // Green when snap is active
+                  ? 'text-gray-400'
+                  : 'text-green-500'
               }`}
             />
           </button>
@@ -881,6 +897,16 @@ const P5Canvas = ({
               ))}
             </div>
           )}
+        </div>
+
+        <div className="relative">
+          <input
+            type="color"
+            value={defaultLineColor}
+            onChange={(e) => onDefaultLineColorChange(e.target.value)}
+            className="w-10 h-10 p-1 rounded cursor-pointer bg-white shadow hover:bg-gray-100"
+            title="Set Default Line Color"
+          />
         </div>
       </div>
 
