@@ -5,12 +5,53 @@ import ReactFlow, {
   MiniMap,
   useNodesState,
   useEdgesState,
-  useReactFlow
+  useReactFlow,
+  useKeyPress
 } from 'reactflow';
 import { nodeTypes, defaultNodeData } from './nodes/nodeTypes';
 import ContextMenu from './ContextMenu';
 import 'reactflow/dist/style.css';
 import { computeGraph } from '../lib/nodeComputation';
+
+const QuickAdd = ({ searchTerm, options, selectedIndex, onSelect, onSearchChange }) => {
+  return (
+    <div 
+      className="bg-white rounded shadow-lg"
+      style={{ 
+        width: 'auto',
+        minWidth: '150px'
+      }}
+    >
+      <input
+        autoFocus
+        type="text"
+        value={searchTerm}
+        onChange={(e) => onSearchChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Tab') e.preventDefault();
+        }}
+        className="w-full p-2 outline-none border-b text-sm"
+        placeholder="Search nodes..."
+        size={15}
+      />
+      {options.length > 0 && (
+        <div className="max-h-40 overflow-y-auto">
+          {options.map((option, index) => (
+            <div
+              key={option.type}
+              className={`px-2 py-1 cursor-pointer text-sm whitespace-nowrap ${
+                index === selectedIndex ? 'bg-blue-50' : 'hover:bg-gray-50'
+              }`}
+              onClick={() => onSelect(option)}
+            >
+              {option.label}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Flow = ({
   onNodeSelect,
@@ -28,7 +69,13 @@ const Flow = ({
 }) => {
   const reactFlowWrapper = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
-  const { screenToFlowPosition, fitView } = useReactFlow();
+  const { screenToFlowPosition, fitView, getNode } = useReactFlow();
+  const [quickAdd, setQuickAdd] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedIndex, setSelectedIndex] = useState(0);
+  const upPressed = useKeyPress('ArrowUp');
+  const downPressed = useKeyPress('ArrowDown');
+  const enterPressed = useKeyPress('Enter');
 
   // Define computeGraphOnce first
   const computeGraphOnce = useCallback(async (force = false) => {
@@ -503,14 +550,142 @@ const Flow = ({
     return null;
   }
 
-  
+  // Add this function to get available node options
+  const getNodeOptions = useCallback(() => {
+    const searchLower = searchTerm.toLowerCase();
+    return Object.entries(defaultNodeData)
+      .filter(([type, data]) => {
+        const matchLabel = data.label.toLowerCase().includes(searchLower);
+        const matchDescription = data.menu.description.toLowerCase().includes(searchLower);
+        return matchLabel || matchDescription;
+      })
+      .map(([type, data]) => ({
+        type,
+        label: data.label,
+        description: data.menu.description
+      }));
+  }, [searchTerm]);
+
+  // Add handler for quick add selection
+  const handleQuickAddSelect = useCallback((option) => {
+    const selectedNode = [...nodes].reverse().find(n => n.selected);
+    
+    // Calculate position - if there's a selected node, place new node below it
+    let position = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2
+    };
+    
+    if (selectedNode) {
+      position = {
+        x: selectedNode.position.x,
+        y: selectedNode.position.y + 100
+      };
+    }
+    
+    // Create new node
+    const newNode = {
+      id: generateUniqueId('node_', nodes),
+      position,
+      type: option.type,
+      selected: false,
+      data: {
+        ...defaultNodeData[option.type],
+        bypass: false,
+        isOutput: false,
+        isMultiSelected: false,
+        onToggleBypass: handleToggleBypass,
+        onToggleOutput: handleToggleOutput,
+      },
+    };
+    
+    // Add node first
+    setNodes(nds => [...nds, newNode]);
+    
+    // If there's a selected node, create the connection
+    if (selectedNode) {
+      const newEdge = {
+        id: generateUniqueId('edge_', edges),
+        source: selectedNode.id,
+        target: newNode.id,
+        sourceHandle: null,  // Remove specific handles
+        targetHandle: null,  // Remove specific handles
+        type: 'default',    // Ensure default type
+        animated: true,
+        style: { stroke: '#999', strokeWidth: 2 }
+      };
+      
+      // Add the edge and force computation
+      setEdges(eds => [...eds, newEdge]);
+      setTimeout(() => {
+        computeGraphOnce(true);
+      }, 50); // Give a small delay to ensure node is added first
+    }
+
+    // Reset quick add state
+    setQuickAdd(null);
+    setSearchTerm('');
+    setSelectedIndex(0);
+  }, [nodes, edges, handleToggleBypass, handleToggleOutput, computeGraphOnce]);
+
+  // Add effect for keyboard navigation
+  useEffect(() => {
+    if (!quickAdd) return;
+
+    const handleKeyDown = (event) => {
+      const options = getNodeOptions();
+      
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault();
+          setSelectedIndex(prev => Math.max(0, prev - 1));
+          break;
+        
+        case 'ArrowDown':
+          event.preventDefault();
+          setSelectedIndex(prev => Math.min(options.length - 1, prev + 1));
+          break;
+        
+        case 'Enter':
+          event.preventDefault();
+          if (options.length > 0) {
+            handleQuickAddSelect(options[selectedIndex]);
+          }
+          break;
+        
+        case 'Escape':
+          event.preventDefault();
+          setQuickAdd(null);
+          setSearchTerm('');
+          setSelectedIndex(0);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [quickAdd, getNodeOptions, selectedIndex, handleQuickAddSelect]);
+
+  // Add this effect to handle Tab key
+  useEffect(() => {
+    const handleTabKey = (event) => {
+      if (event.key === 'Tab' && !quickAdd) {
+        event.preventDefault();
+        setQuickAdd({ position: {} }); // We don't need position anymore
+      }
+    };
+
+    window.addEventListener('keydown', handleTabKey);
+    return () => window.removeEventListener('keydown', handleTabKey);
+  }, [quickAdd]);
+
   return (
     <div 
       className="reactflow-wrapper bg-gray-100" 
       ref={reactFlowWrapper} 
       style={{ 
-        width: '100vw', 
-        height: '100vh',
+        width: '100%',
+        height: '100%',
         position: 'relative'
       }}
     >
@@ -533,9 +708,34 @@ const Flow = ({
         selectNodesOnDrag={false}
       >
         <Background />
-        <Controls />
         <MiniMap />
       </ReactFlow>
+      <div 
+        className="absolute inset-0 pointer-events-none"
+        style={{ 
+          zIndex: 5  // Ensure it's above ReactFlow but below other UI elements
+        }}
+      >
+        <div className="flex justify-center">
+          {quickAdd && (
+            <div 
+              className="pointer-events-auto"
+              style={{ 
+                marginTop: '20px',
+                zIndex: 1000  // Ensure the QuickAdd is above everything
+              }}
+            >
+              <QuickAdd
+                searchTerm={searchTerm}
+                options={getNodeOptions()}
+                selectedIndex={selectedIndex}
+                onSelect={handleQuickAddSelect}
+                onSearchChange={setSearchTerm}
+              />
+            </div>
+          )}
+        </div>
+      </div>
       <ContextMenu
         position={contextMenu}
         onCreateNode={onCreateNode}
