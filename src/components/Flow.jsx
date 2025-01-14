@@ -69,7 +69,7 @@ const Flow = ({
 }) => {
   const reactFlowWrapper = useRef(null);
   const [contextMenu, setContextMenu] = useState(null);
-  const { screenToFlowPosition, fitView, getNode } = useReactFlow();
+  const { screenToFlowPosition, fitView, getNode, getViewport } = useReactFlow();
   const [quickAdd, setQuickAdd] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -232,47 +232,45 @@ const Flow = ({
   }, [setNodes]);
   // Check if the connection is valid
   const onConnect = useCallback((params) => {
-    setEdges((eds) => {
-      const targetNode = nodes.find(node => node.id === params.target);
-      const isMergeNode = targetNode?.type === 'merge';
-      
-      // Create new edge with unique ID
-      const newEdge = {
-        ...params,
-        id: generateUniqueId('edge_', eds),
-        animated: true,
-        data: {
-          label: `Connection ${params.source} → ${params.target}`
-        },
-        style: { 
-          stroke: '#999', 
-          strokeWidth: 2,
-          transition: 'stroke-width 0.2s'
-        },
-        className: 'react-flow__edge-path'
-      };
-      
-      // For merge nodes, allow multiple connections
-      if (isMergeNode) {
-        return [...eds, newEdge];
-      }
-      
-      // For other nodes, replace existing connection to the same input
-      const existingConnection = eds.find(
-        edge => 
-          edge.target === params.target && 
-          edge.targetHandle === params.targetHandle
-      );
-      
-      const filteredEdges = existingConnection 
-        ? eds.filter(edge => edge !== existingConnection)
-        : eds;
+    const targetNode = nodes.find(node => node.id === params.target);
+    const sourceNode = nodes.find(node => node.id === params.source);
+    
+    if (!targetNode || !sourceNode) return;
 
-      return [...filteredEdges, newEdge];
+    const isMergeNode = targetNode.type === 'merge';
+    
+    const newEdge = {
+      ...params,
+      id: generateUniqueId('edge_', edges),
+      source: sourceNode.id,
+      target: targetNode.id,
+      sourceHandle: params.sourceHandle || 'default',
+      targetHandle: params.targetHandle || 'default',
+      animated: true,
+      style: { stroke: '#999', strokeWidth: 2 }
+    };
+
+    setEdges(eds => {
+      let updatedEdges;
+      if (isMergeNode) {
+        updatedEdges = [...eds, newEdge];
+      } else {
+        updatedEdges = [
+          ...eds.filter(edge => 
+            !(edge.target === targetNode.id && 
+              edge.targetHandle === (params.targetHandle || 'default'))
+          ),
+          newEdge
+        ];
+      }
+      return updatedEdges;
     });
-    // Force recomputation on new connections
-    setTimeout(() => computeGraphOnce(true), 0);
-  }, [setEdges, nodes, computeGraphOnce]);
+
+    // Force computation after edge update
+    requestAnimationFrame(() => {
+      computeGraphOnce(true);
+    });
+  }, [nodes, edges, setEdges, computeGraphOnce]);
 
   // Validate connection while dragging
   const onConnectStart = useCallback((event, { nodeId, handleId, handleType }) => {
@@ -569,23 +567,28 @@ const Flow = ({
   // Add handler for quick add selection
   const handleQuickAddSelect = useCallback((option) => {
     const selectedNode = [...nodes].reverse().find(n => n.selected);
+    const viewport = getViewport();
     
-    // Calculate position - if there's a selected node, place new node below it
-    let position = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2
-    };
-    
+    let position;
     if (selectedNode) {
       position = {
         x: selectedNode.position.x,
         y: selectedNode.position.y + 100
       };
+    } else {
+      const flowBounds = reactFlowWrapper.current.getBoundingClientRect();
+      const centerX = flowBounds.width / 2;
+      const centerY = flowBounds.height / 2;
+      
+      position = {
+        x: (centerX - viewport.x) / viewport.zoom,
+        y: (centerY - viewport.y) / viewport.zoom
+      };
     }
     
-    // Create new node
+    const newNodeId = generateUniqueId('node_', nodes);
     const newNode = {
-      id: generateUniqueId('node_', nodes),
+      id: newNodeId,
       position,
       type: option.type,
       selected: false,
@@ -598,35 +601,38 @@ const Flow = ({
         onToggleOutput: handleToggleOutput,
       },
     };
-    
-    // Add node first
+
+    // Add the node
     setNodes(nds => [...nds, newNode]);
-    
+
     // If there's a selected node, create the connection
     if (selectedNode) {
-      const newEdge = {
-        id: generateUniqueId('edge_', edges),
+      // Create connection params
+      const params = {
         source: selectedNode.id,
-        target: newNode.id,
-        sourceHandle: null,  // Remove specific handles
-        targetHandle: null,  // Remove specific handles
-        type: 'default',    // Ensure default type
-        animated: true,
-        style: { stroke: '#999', strokeWidth: 2 }
+        target: newNodeId,
+        sourceHandle: 'default',
+        targetHandle: 'default'
       };
-      
-      // Add the edge and force computation
-      setEdges(eds => [...eds, newEdge]);
-      setTimeout(() => {
-        computeGraphOnce(true);
-      }, 50); // Give a small delay to ensure node is added first
+
+      // Use onConnect directly after a small delay to ensure node is added
+      requestAnimationFrame(() => {
+        onConnect(params);
+      });
     }
 
     // Reset quick add state
     setQuickAdd(null);
     setSearchTerm('');
     setSelectedIndex(0);
-  }, [nodes, edges, handleToggleBypass, handleToggleOutput, computeGraphOnce]);
+  }, [
+    nodes,
+    setNodes,
+    handleToggleBypass,
+    handleToggleOutput,
+    getViewport,
+    onConnect
+  ]);
 
   // Add effect for keyboard navigation
   useEffect(() => {
