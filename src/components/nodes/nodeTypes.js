@@ -19,6 +19,7 @@ import EditNode, { defaultData as editDefaultData } from './Modify/EditNode';
 import CleanupNode, { defaultData as cleanupDefaultData } from './Modify/CleanupNode';
 import SubdivideNode, { defaultData as subdivideDefaultData } from './Modify/SubdivideNode';
 import CloseNode, { defaultData as closeDefaultData } from './Modify/CloseNode';
+import FuseNode, { defaultData as fuseDefaultData } from './Modify/FuseNode';
 
 // Utility
 import CodeNode, { defaultData as codeDefaultData, onPropertyChange as codePropertyChange } from './Utility/CodeNode';
@@ -53,7 +54,8 @@ export const nodeTypes = {
   attributes: AttributesNode,
   duplicate: DuplicateNode,
   subdivide: SubdivideNode,
-  close: CloseNode
+  close: CloseNode,
+  fuse: FuseNode
 };
 
 export const defaultNodeData = {
@@ -74,7 +76,8 @@ export const defaultNodeData = {
   attributes: attributesDefaultData,
   duplicate: duplicateDefaultData,
   subdivide: subdivideDefaultData,
-  close: closeDefaultData
+  close: closeDefaultData,
+  fuse: fuseDefaultData
 };
 
 export const propertyChangeHandlers = {
